@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>주간 블록 보드</title>
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#ffffff">
+
+  <style>
+    :root{
+      --bg:#ffffff;
+      --card:#f7f7f8;
+      --line:#d9d9de;
+      --text:#1f2328;
+
+      --done-bg:#eef0f3;
+      --done-border:#c9ced6;
+      --done-text:#6f7782;
+
+      --radius:14px;
+      --gap:10px;
+
+      /* ✅ 팝오버 내부 기준 간격(원하는 만큼 9~12로 튜닝 가능) */
+      --ui-gap:10px;
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+    }
+
+    .app{ max-width:1080px; margin:0 auto; padding:12px; }
+
+    .panel{
+      border:1.5px solid var(--line);
+      border-radius:var(--radius);
+      background:var(--card);
+      padding:10px;
+      margin-bottom:12px;
+    }
+
+    .add-row{
+      display:flex;
+      gap:8px;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+      align-items:stretch;
+    }
+
+    .add-row input{
+      border:1px solid #c8cad0;
+      border-radius:10px;
+      height:38px;
+      padding:0 12px;
+      font-size:14px;
+      background:#fff;
+      color:#111827;
+      font-weight:600;
+    }
+
+    #taskInput{ flex:1 1 260px; min-width:170px; }
+    #noteInput{ flex:1 1 380px; min-width:220px; color:#2f3a4a; font-weight:500; }
+
+    .add-row input::placeholder{ color:#9aa3b2; font-weight:500; }
+
+    .add-row button{
+      border:1px solid #c8cad0;
+      background:#fff;
+      border-radius:10px;
+      height:38px;
+      padding:0 12px;
+      font-size:14px;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    .storage{
+      display:flex;
+      flex-wrap:wrap;
+      align-content:flex-start;
+      gap:var(--gap);
+      padding:var(--gap);
+      overflow-y:auto;
+      overflow-x:hidden;
+      max-height:132px;
+      border-radius:12px;
+      background:rgba(255,255,255,.45);
+      border:1px solid rgba(148,163,184,.25);
+      min-height:54px;
+    }
+
+    /* ✅ 탭(칩) 제목 볼드 제거 */
+    .chip{
+      height:42px;
+      border:1px solid #b8bbc2;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:0 10px 0 12px;
+
+      font-weight:500;
+      font-size:14px;
+
+      user-select:none;
+      cursor:pointer;
+      position:relative;
+      width:auto;
+      max-width:100%;
+      touch-action:manipulation;
+    }
+
+    .chip-text{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      min-width:0;
+      flex:0 1 auto;
+      font-weight:500;
+    }
+
+    .chip-del{
+      width:22px;
+      height:22px;
+      border:1px solid #c8cad0;
+      border-radius:50%;
+      display:none;
+      place-items:center;
+      font-size:13px;
+      color:#6c7280;
+      background:#fff;
+      cursor:pointer;
+      line-height:1;
+      padding:0;
+      flex:0 0 auto;
+      transform-origin:center;
+    }
+
+    .chip.show-del{ box-shadow:0 0 0 2px rgba(239,68,68,.22); }
+    .chip.show-del .chip-del{ display:grid; }
+
+    @keyframes popIn { from { transform:scale(.6); opacity:0; } to { transform:scale(1); opacity:1; } }
+    @keyframes haloIn { from { box-shadow:0 0 0 0 rgba(239,68,68,.0); } to { box-shadow:0 0 0 2px rgba(239,68,68,.22); } }
+    .chip.del-anim{ animation:haloIn .16s ease-out; }
+    .chip.del-anim .chip-del{ animation:popIn .16s ease-out; }
+
+    .week{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:10px;
+    }
+
+    .day{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      min-height:120px;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      transition:.15s;
+    }
+
+    .day-head{
+      padding:8px 10px;
+      font-weight:400;
+      font-size:14px;
+      border-bottom:1px solid #ececf0;
+      background:#fafafa;
+      cursor:pointer;
+      transition:background .15s, border-bottom-color .15s;
+    }
+
+    .day.selected .day-head{
+      background:#eaf3ff;
+      border-bottom-color:#d7e6ff;
+    }
+
+    .slot{
+      padding:8px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-content:flex-start;
+      min-height:84px;
+      cursor:pointer;
+    }
+
+    .item{ transition:background .18s, border-color .18s, color .18s, transform .08s; }
+    .item:active{ transform:scale(.99); }
+
+    .ck-count{
+      flex:0 0 auto;
+      font-size:12px;
+      font-weight:600;
+      padding:2px 7px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.5);
+      background:rgba(255,255,255,.65);
+      color:#374151;
+      display:none;
+    }
+    .item.has-ck .ck-count{ display:inline-flex; }
+
+    .item.done{
+      background:var(--done-bg) !important;
+      border-color:var(--done-border) !important;
+      color:var(--done-text);
+    }
+    .item.done .chip-text{
+      text-decoration:line-through;
+      text-decoration-thickness:1.5px;
+      opacity:.9;
+    }
+    .item.done .ck-count{
+      color:var(--done-text);
+      border-color:var(--done-border);
+      background:rgba(238,240,243,.9);
+      opacity:.95;
+    }
+
+    .toolbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .toolbar button{
+      border:1px solid #c8cad0;
+      background:#fff;
+      border-radius:10px;
+      height:38px;
+      padding:0 12px;
+      font-size:14px;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(255,255,255,0.01);
+      backdrop-filter:blur(2px);
+      -webkit-backdrop-filter:blur(2px);
+      opacity:0;
+      display:none;
+      z-index:50;
+      transition:opacity .14s ease;
+    }
+    .modal-backdrop.show{ opacity:1; }
+
+    /* ✅ 팝오버: gap이 확실히 먹도록(열 때 display:flex로 켬) */
+    .note-pop{
+      position:fixed;
+      z-index:60;
+      width:min(360px, calc(100vw - 24px));
+      max-height:calc(100vh - 24px);
+      overflow:auto;
+
+      background:#fff;
+      border:1px solid #d7dce6;
+      border-radius:12px;
+      box-shadow:0 14px 34px rgba(16,24,40,.18);
+
+      padding:12px;
+
+      display:none;          /* <- 기본은 숨김 */
+      opacity:0;
+      transform:translateY(6px);
+      transition:opacity .14s ease, transform .14s ease;
+
+      /* flex는 열 때 JS에서 켜줌 */
+      flex-direction:column;
+      gap:var(--ui-gap);
+    }
+    .note-pop.show{ opacity:1; transform:translateY(0); }
+
+    .note-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px; /* 수평만 */
+    }
+
+    .note-top .ttl{
+      font-size:16px;
+      font-weight:600; /* 제목도 과볼드 방지 */
+      color:#2f3a4a;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      line-height:1.25;
+    }
+
+    .note-btn{
+      border:1px solid #c8cad0;
+      background:#fff;
+      border-radius:9px;
+      height:34px;
+      padding:0 10px;
+      font-size:12px;
+      font-weight:600;
+      cursor:pointer;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+
+    .note-body{
+      width:100%;
+      border-radius:10px;
+      border:1px solid rgba(148,163,184,.35);
+      background:rgba(255,255,255,.68);
+      padding:7px 8px;
+      min-height:44px;
+
+      display:flex;
+      align-items:center;           /* 왼쪽 중앙 정렬 느낌 */
+      justify-content:flex-start;
+      text-align:left;
+
+      font-size:13px;
+      line-height:1.5;
+      color:#243041;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    .note-empty{ color:#8a93a2; font-style:normal; }
+
+    .check-wrap{
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      gap:var(--ui-gap);
+    }
+
+    .check-list{
+      display:flex;
+      flex-direction:column;
+      gap:var(--ui-gap);
+      margin:0;
+      padding:0;
+      max-height:220px;
+      overflow:auto;
+      padding-right:2px;
+    }
+
+    .check-item{
+      display:flex;
+      align-items:flex-start;
+      gap:8px;
+      border:1px solid rgba(148,163,184,.35);
+      border-radius:10px;
+      padding:7px 8px;
+      background:rgba(255,255,255,.68);
+    }
+    .check-item.done{
+      opacity:.78;
+      background:rgba(238,240,243,.85);
+    }
+
+    .check-toggle{
+      margin-top:2px;
+      width:16px;
+      height:16px;
+      flex:0 0 auto;
+      cursor:pointer;
+    }
+
+    .check-text{
+      flex:1 1 auto;
+      font-size:13px;
+      line-height:1.45;
+      color:#243041;
+      word-break:break-word;
+    }
+
+    .check-item.done .check-text{
+      text-decoration:line-through;
+      color:#6b7280;
+    }
+
+    .check-del{
+      width:22px;
+      height:22px;
+      border:1px solid #c8cad0;
+      border-radius:50%;
+      background:#fff;
+      color:#6b7280;
+      font-size:13px;
+      line-height:1;
+      padding:0;
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+
+    .check-add{
+      display:flex;
+      gap:var(--ui-gap); /* ✅ 기준 간격 */
+      align-items:center;
+    }
+
+    .check-add input{
+      flex:1 1 auto;
+      height:34px;
+      border:1px solid #cbd5e1;
+      border-radius:9px;
+      padding:0 10px;
+      font-size:13px;
+      background:rgba(255,255,255,.85);
+      color:#111827;
+    }
+
+    .check-add input::placeholder{ color:#9aa3b2; font-weight:600; }
+
+    .check-add button{
+      height:34px;
+      border:1px solid #c8cad0;
+      border-radius:9px;
+      background:#fff;
+      padding:0 10px;
+      font-size:12px;
+      font-weight:600;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .check-limit{
+      font-size:12px;
+      font-weight:800;
+      color:#6b7280;
+      margin:0;
+    }
+
+    @media (min-width:700px){
+      .week{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+    }
+    @media (min-width:1024px){
+      .week{ grid-template-columns:repeat(7,minmax(120px,1fr)); }
+      .day{ min-height:200px; }
+      .slot{ min-height:145px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="app">
+  <div class="panel">
+    <div class="add-row">
+      <input id="taskInput" type="text" placeholder="여기에 과제를 입력해" />
+      <input id="noteInput" type="text" placeholder="여기에는 설명을 입력해줘" />
+      <button id="addTaskBtn">+ 과제 추가</button>
+    </div>
+
+    <div class="storage" id="storage"></div>
+  </div>
+
+  <div class="panel">
+    <div class="week" id="week"></div>
+    <div class="toolbar">
+      <button id="newWeek">새로운 주차</button>
+      <button id="copyWeek">이번 주차 복사</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop"></div>
+
+<div class="note-pop" id="notePop">
+  <div class="note-top">
+    <div class="ttl" id="notePopTitle">메모</div>
+    <button class="note-btn" id="noteCloseBtn">닫기</button>
+  </div>
+
+  <div class="note-body" id="notePopBody"></div>
+
+  <div class="check-wrap">
+    <div id="checklistList" class="check-list"></div>
+    <div class="check-add">
+      <input id="checkInput" type="text" placeholder="체크리스트 항목 추가" />
+      <button id="checkAddBtn" type="button">추가</button>
+    </div>
+    <div id="checkLimitHint" class="check-limit" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const STORAGE_KEY = "weekly-board-state-v10";
+
+  const LONG_PRESS_MS = 520;
+  const CLICK_DELAY = 220;
+  const MAX_CHECKLIST = 5;
+
+  let suppressClicksUntil = 0;
+
+  const pastelPalette = [
+    { key:"p1",  bg:"#FDECEF", border:"#E7BBC6" },
+    { key:"p2",  bg:"#FFF1E8", border:"#E8C3AE" },
+    { key:"p3",  bg:"#FFF6E5", border:"#E9D1A2" },
+    { key:"p4",  bg:"#FFFCE8", border:"#E7E1A8" },
+    { key:"p5",  bg:"#EAF8F1", border:"#B8DFC8" },
+    { key:"p6",  bg:"#EDF7EE", border:"#BED8C0" },
+    { key:"p7",  bg:"#EAF3FF", border:"#B8CCEA" },
+    { key:"p8",  bg:"#EEF0FF", border:"#C1C7EC" },
+    { key:"p9",  bg:"#F1EDFF", border:"#C7BCEB" },
+    { key:"p10", bg:"#FCEFF6", border:"#E5C0D6" }
+  ];
+  const colorMap = Object.fromEntries(pastelPalette.map(c => [c.key, c]));
+
+  function emptyBoard() { return Object.fromEntries(days.map(d => [d, []])); }
+
+  let selectedDay = "Mon";
+  let boardUid = 1;
+  let taskUid = 1;
+  let lastColorKey = null;
+
+  let tasks = [];
+  let board = emptyBoard();
+
+  let clickTimer = null;
+
+  let popState = { day:null, uid:null };
+  let popCloseTimer = null;
+  let backdropCloseTimer = null;
+
+  let activeDeleteChip = null;
+
+  const weekEl = document.getElementById("week");
+  const storageEl = document.getElementById("storage");
+
+  const taskInput = document.getElementById("taskInput");
+  const noteInput = document.getElementById("noteInput");
+  const addTaskBtn = document.getElementById("addTaskBtn");
+  const newWeekBtn = document.getElementById("newWeek");
+  const copyWeekBtn = document.getElementById("copyWeek");
+
+  const modalBackdrop = document.getElementById("modalBackdrop");
+  const notePop = document.getElementById("notePop");
+  const notePopTitle = document.getElementById("notePopTitle");
+  const notePopBody = document.getElementById("notePopBody");
+  const noteCloseBtn = document.getElementById("noteCloseBtn");
+  const checklistList = document.getElementById("checklistList");
+  const checkInput = document.getElementById("checkInput");
+  const checkAddBtn = document.getElementById("checkAddBtn");
+  const checkLimitHint = document.getElementById("checkLimitHint");
+
+  const sanitizeLabel = s => (s || "").replace(/\s+/g, " ").trim();
+  const normalizeNote = s => (s || "").replace(/\r\n/g, "\n").trim();
+  const escapeHtml = s => String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#39;");
+
+  function normalizeChecklist(list){
+    if (!Array.isArray(list)) return [];
+    return list.map(x => ({
+      id: String(x?.id ?? ("c" + Math.random().toString(36).slice(2))),
+      text: sanitizeLabel(String(x?.text ?? "")),
+      done: Boolean(x?.done)
+    })).filter(x => x.text);
+  }
+
+  const pillStyle = key => {
+    const c = colorMap[key] || pastelPalette[0];
+    return `background:${c.bg}; border-color:${c.border};`;
+  };
+
+  function randomColorKey(){
+    const keys = pastelPalette.map(c => c.key);
+    const pool = (lastColorKey && keys.length > 1)
+      ? keys.filter(k => k !== lastColorKey)
+      : keys;
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    lastColorKey = picked;
+    return picked;
+  }
+
+  function safeLocalStorageGet(key){
+    try { return localStorage.getItem(key); } catch { return null; }
+  }
+  function safeLocalStorageSet(key, value){
+    try { localStorage.setItem(key, value); } catch {}
+  }
+
+  function saveState(){
+    const payload = {
+      version: 10,
+      selectedDay,
+      boardUid,
+      taskUid,
+      lastColorKey,
+      tasks,
+      board
+    };
+    safeLocalStorageSet(STORAGE_KEY, JSON.stringify(payload));
+  }
+
+  function normalizeLoadedBoard(rawBoard){
+    const normalized = emptyBoard();
+    if (!rawBoard || typeof rawBoard !== "object") return normalized;
+
+    for (const day of days){
+      const arr = Array.isArray(rawBoard[day]) ? rawBoard[day] : [];
+      normalized[day] = arr.map(item => ({
+        uid: String(item?.uid ?? "u" + Math.random().toString(36).slice(2)),
+        sourceTid: item?.sourceTid ? String(item.sourceTid) : null,
+        label: sanitizeLabel(String(item?.label ?? "")),
+        note: normalizeNote(String(item?.note ?? "")),
+        colorKey: colorMap[item?.colorKey] ? item.colorKey : pastelPalette[0].key,
+        done: Boolean(item?.done),
+        checklist: normalizeChecklist(item?.checklist)
+      })).filter(x => x.label);
+    }
+    return normalized;
+  }
+
+  function loadState(){
+    const raw = safeLocalStorageGet(STORAGE_KEY);
+    if (!raw) return;
+
+    try{
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return;
+
+      const loadedSelected = String(parsed.selectedDay || "Mon");
+      selectedDay = days.includes(loadedSelected) ? loadedSelected : "Mon";
+
+      boardUid = Number.isFinite(parsed.boardUid) ? Math.max(1, Math.floor(parsed.boardUid)) : 1;
+      taskUid = Number.isFinite(parsed.taskUid) ? Math.max(1, Math.floor(parsed.taskUid)) : 1;
+      lastColorKey = colorMap[parsed.lastColorKey] ? parsed.lastColorKey : null;
+
+      const loadedTasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+      tasks = loadedTasks.map(t => ({
+        tid: String(t?.tid ?? "t" + Math.random().toString(36).slice(2)),
+        label: sanitizeLabel(String(t?.label ?? "")),
+        note: normalizeNote(String(t?.note ?? "")),
+        colorKey: colorMap[t?.colorKey] ? t.colorKey : pastelPalette[0].key
+      })).filter(t => t.label);
+
+      board = normalizeLoadedBoard(parsed.board);
+    }catch{}
+  }
+
+  function vibrateTick(){
+    try{
+      if (navigator && typeof navigator.vibrate === "function") navigator.vibrate(18);
+    }catch{}
+  }
+  function nowSuppressed(){ return Date.now() < suppressClicksUntil; }
+
+  function hideAllDeleteButtons(){
+    document.querySelectorAll(".chip.show-del").forEach(el => {
+      el.classList.remove("show-del");
+      el.classList.remove("del-anim");
+    });
+    activeDeleteChip = null;
+  }
+
+  function enterDeleteMode(el){
+    if (activeDeleteChip && activeDeleteChip !== el){
+      activeDeleteChip.classList.remove("show-del","del-anim");
+    }
+    activeDeleteChip = el;
+    el.classList.add("show-del","del-anim");
+    setTimeout(() => el.classList.remove("del-anim"), 220);
+    vibrateTick();
+  }
+
+  function findBoardItem(day, uidValue){
+    const arr = board[day] || [];
+    return arr.find(x => x.uid === uidValue) || null;
+  }
+
+  function hasIncompleteChecklist(item){
+    const ck = Array.isArray(item.checklist) ? item.checklist : [];
+    return ck.some(c => !c.done);
+  }
+
+  function toggleDone(day, uidValue){
+    const item = findBoardItem(day, uidValue);
+    if (!item) return false;
+
+    if (!item.done){
+      if (hasIncompleteChecklist(item)){
+        alert("아직 체크리스트 남아있어. 다 체크하고 완료해줘.");
+        return false;
+      }
+      item.done = true;
+      saveState();
+      return true;
+    }
+    item.done = false;
+    saveState();
+    return true;
+  }
+
+  function showBackdrop(){
+    clearTimeout(backdropCloseTimer);
+    modalBackdrop.style.display = "block";
+    requestAnimationFrame(() => modalBackdrop.classList.add("show"));
+  }
+  function hideBackdrop(){
+    modalBackdrop.classList.remove("show");
+    clearTimeout(backdropCloseTimer);
+    backdropCloseTimer = setTimeout(() => {
+      modalBackdrop.style.display = "none";
+    }, 150);
+  }
+
+  function applyPopColorByKey(colorKey){
+    const c = colorMap[colorKey] || pastelPalette[0];
+    notePop.style.background = c.bg;
+    notePop.style.borderColor = c.border;
+  }
+  function resetPopColor(){
+    notePop.style.background = "#fff";
+    notePop.style.borderColor = "#d7dce6";
+  }
+
+  function refreshChecklistControls(item){
+    const ck = Array.isArray(item.checklist) ? item.checklist : [];
+    const remain = MAX_CHECKLIST - ck.length;
+
+    if (remain <= 0){
+      checkAddBtn.disabled = true;
+      checkInput.disabled = true;
+      checkLimitHint.style.display = "block";
+      checkLimitHint.textContent = "체크리스트는 최대 5개까지만 가능해.";
+    }else{
+      checkAddBtn.disabled = false;
+      checkInput.disabled = false;
+      checkLimitHint.style.display = "none";
+      checkLimitHint.textContent = "";
+    }
+  }
+
+  function renderChecklist(item){
+    checklistList.innerHTML = "";
+    const list = Array.isArray(item.checklist) ? item.checklist : [];
+    const visible = list.slice(0, MAX_CHECKLIST);
+
+    checklistList.style.display = (visible.length === 0) ? "none" : "flex";
+
+    visible.forEach((ck, idx) => {
+      const row = document.createElement("div");
+      row.className = "check-item" + (ck.done ? " done" : "");
+      row.innerHTML = `
+        <input type="checkbox" class="check-toggle" ${ck.done ? "checked" : ""}>
+        <span class="check-text">${escapeHtml(ck.text)}</span>
+        <button type="button" class="check-del">×</button>
+      `;
+
+      row.querySelector(".check-toggle").addEventListener("change", (e) => {
+        ck.done = e.target.checked;
+        if (!ck.done && item.done) item.done = false;
+        saveState();
+        renderChecklist(item);
+        renderWeek();
+      });
+
+      row.querySelector(".check-del").addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        list.splice(idx, 1);
+        if (item.done && hasIncompleteChecklist(item)) item.done = false;
+        saveState();
+        renderChecklist(item);
+        renderWeek();
+      });
+
+      checklistList.appendChild(row);
+    });
+
+    refreshChecklistControls(item);
+  }
+
+  function setViewMode(title, note){
+    notePopTitle.textContent = title || "메모";
+    const n = (note || "").trim();
+    if (n){
+      notePopBody.innerHTML = escapeHtml(n).replaceAll("\n","<br>");
+    }else{
+      notePopBody.innerHTML = `<span class="note-empty">설명이 없어</span>`;
+    }
+  }
+
+  function positionPopNearAnchor(anchorEl){
+    const pad = 8;
+    const margin = 12;
+
+    /* ✅ 핵심: flex로 켜야 gap이 제대로 먹음 */
+    notePop.style.left = "-9999px";
+    notePop.style.top = "-9999px";
+    notePop.style.display = "flex";
+
+    const a = anchorEl.getBoundingClientRect();
+    const p = notePop.getBoundingClientRect();
+
+    let left = a.left + (a.width - p.width) / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - p.width - margin));
+
+    let top = a.top - p.height - pad;
+    if (top < margin){
+      top = a.bottom + pad;
+      if (top + p.height > window.innerHeight - margin){
+        top = Math.max(margin, window.innerHeight - p.height - margin);
+      }
+    }
+
+    notePop.style.left = `${left}px`;
+    notePop.style.top = `${top}px`;
+  }
+
+  function closeNotePop(){
+    if (notePop.style.display !== "flex") return;
+
+    notePop.classList.remove("show");
+    hideBackdrop();
+
+    clearTimeout(popCloseTimer);
+    popCloseTimer = setTimeout(() => {
+      notePop.style.display = "none";
+      popState = { day:null, uid:null };
+      notePopTitle.textContent = "메모";
+      notePopBody.innerHTML = "";
+      checklistList.innerHTML = "";
+      checklistList.style.display = "none";
+      checkInput.value = "";
+      resetPopColor();
+      checkLimitHint.style.display = "none";
+      checkLimitHint.textContent = "";
+      checkAddBtn.disabled = false;
+      checkInput.disabled = false;
+    }, 150);
+  }
+
+  function openNotePop(anchorEl, day, uidValue){
+    const item = findBoardItem(day, uidValue);
+    if (!item) return;
+
+    popState = { day, uid:uidValue };
+    applyPopColorByKey(item.colorKey);
+    setViewMode(item.label, item.note || "");
+    renderChecklist(item);
+
+    showBackdrop();
+    notePop.classList.remove("show");
+    positionPopNearAnchor(anchorEl);
+    requestAnimationFrame(() => notePop.classList.add("show"));
+  }
+
+  function addChecklistItem(){
+    if (!popState.day || !popState.uid) return;
+    const item = findBoardItem(popState.day, popState.uid);
+    if (!item) return;
+
+    const list = Array.isArray(item.checklist) ? item.checklist : (item.checklist = []);
+    if (list.length >= MAX_CHECKLIST){
+      alert("체크리스트는 최대 5개까지만 가능해.");
+      return;
+    }
+
+    const text = sanitizeLabel(checkInput.value);
+    if (!text) return;
+
+    list.push({
+      id: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      text,
+      done:false
+    });
+
+    if (item.done) item.done = false;
+
+    checkInput.value = "";
+    saveState();
+    renderChecklist(item);
+    renderWeek();
+  }
+
+  function attachLongPressShowDelete(el){
+    let timer = null;
+    let fired = false;
+    let sx = 0, sy = 0;
+
+    const clear = () => { if (timer){ clearTimeout(timer); timer = null; } };
+
+    el.addEventListener("pointerdown", (e) => {
+      if (e.target.closest(".chip-del")) return;
+      fired = false;
+      sx = e.clientX; sy = e.clientY;
+
+      clear();
+      timer = setTimeout(() => {
+        fired = true;
+        suppressClicksUntil = Date.now() + 450;
+        enterDeleteMode(el);
+      }, LONG_PRESS_MS);
+    });
+
+    el.addEventListener("pointermove", (e) => {
+      if (!timer) return;
+      const dx = Math.abs(e.clientX - sx);
+      const dy = Math.abs(e.clientY - sy);
+      if (dx > 10 || dy > 10) clear();
+    });
+
+    el.addEventListener("pointerup", (e) => {
+      clear();
+      if (fired){
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+
+    el.addEventListener("pointercancel", clear);
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+  }
+
+  function addTask(){
+    const label = sanitizeLabel(taskInput.value);
+    if (!label) return;
+
+    const note = normalizeNote(noteInput.value);
+    const colorKey = randomColorKey();
+
+    tasks.push({
+      tid: "t" + (taskUid++),
+      label,
+      note,
+      colorKey
+    });
+
+    taskInput.value = "";
+    noteInput.value = "";
+    saveState();
+    renderStorage();
+  }
+
+  function deleteTaskFromStorage(taskObj){
+    tasks = tasks.filter(t => t.tid !== taskObj.tid);
+    for (const d of days){
+      board[d] = board[d].filter(i => i.sourceTid !== taskObj.tid);
+    }
+    closeNotePop();
+    saveState();
+    renderAll();
+  }
+
+  function removeItem(day, uidValue){
+    const arr = board[day];
+    const idx = arr.findIndex(x => x.uid === uidValue);
+    if (idx > -1) arr.splice(idx, 1);
+    if (popState.uid === uidValue && popState.day === day) closeNotePop();
+    saveState();
+  }
+
+  function renderStorage(){
+    storageEl.innerHTML = "";
+
+    if (!tasks.length){
+      const empty = document.createElement("div");
+      empty.style.fontSize = "13px";
+      empty.style.color = "#666b74";
+      empty.textContent = "아직 과제가 없어. 위에서 추가해줘.";
+      storageEl.appendChild(empty);
+      return;
+    }
+
+    tasks.forEach(taskObj => {
+      const pill = document.createElement("div");
+      pill.className = "chip template";
+      pill.style.cssText = pillStyle(taskObj.colorKey);
+
+      pill.innerHTML = `
+        <span class="chip-text" title="${escapeHtml(taskObj.label)}">${escapeHtml(taskObj.label)}</span>
+        <button type="button" class="chip-del" aria-label="delete">×</button>
+      `;
+
+      attachLongPressShowDelete(pill);
+
+      pill.addEventListener("click", (e) => {
+        if (nowSuppressed()) return;
+        if (e.target.closest(".chip-del")) return;
+        if (pill.classList.contains("show-del")) return;
+
+        board[selectedDay].push({
+          uid: "u" + (boardUid++),
+          sourceTid: taskObj.tid,
+          label: taskObj.label,
+          note: taskObj.note,
+          colorKey: taskObj.colorKey,
+          done:false,
+          checklist:[]
+        });
+
+        saveState();
+        renderWeek();
+      });
+
+      pill.querySelector(".chip-del").addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteTaskFromStorage(taskObj);
+      });
+
+      storageEl.appendChild(pill);
+    });
+  }
+
+  function renderWeek(){
+    weekEl.innerHTML = "";
+
+    days.forEach(day => {
+      const col = document.createElement("div");
+      col.className = "day" + (day === selectedDay ? " selected" : "");
+
+      const head = document.createElement("div");
+      head.className = "day-head";
+      head.textContent = day;
+      head.onclick = () => {
+        if (nowSuppressed()) return;
+        selectedDay = day;
+        saveState();
+        renderWeek();
+      };
+
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      slot.onclick = () => {
+        if (nowSuppressed()) return;
+        selectedDay = day;
+        saveState();
+        renderWeek();
+      };
+
+      (board[day] || []).forEach(item => {
+        const ckLen = Array.isArray(item.checklist) ? item.checklist.length : 0;
+
+        const chip = document.createElement("div");
+        chip.className = "chip item" + (item.done ? " done" : "") + (ckLen ? " has-ck" : "");
+        if (!item.done) chip.style.cssText = pillStyle(item.colorKey);
+
+        chip.innerHTML = `
+          <span class="chip-text" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
+          <span class="ck-count">${ckLen}</span>
+          <button type="button" class="chip-del" aria-label="delete">×</button>
+        `;
+
+        attachLongPressShowDelete(chip);
+
+        chip.addEventListener("click", (e) => {
+          if (nowSuppressed()) return;
+          if (e.target.closest(".chip-del")) return;
+          if (chip.classList.contains("show-del")) return;
+
+          e.stopPropagation();
+          selectedDay = day;
+          saveState();
+
+          clearTimeout(clickTimer);
+          clickTimer = setTimeout(() => {
+            openNotePop(chip, day, item.uid);
+          }, CLICK_DELAY);
+        });
+
+        chip.addEventListener("dblclick", (e) => {
+          if (nowSuppressed()) return;
+          if (e.target.closest(".chip-del")) return;
+          e.preventDefault();
+          e.stopPropagation();
+          clearTimeout(clickTimer);
+          if (chip.classList.contains("show-del")) return;
+
+          if (toggleDone(day, item.uid)){
+            vibrateTick();
+            renderWeek();
+          }
+        });
+
+        chip.querySelector(".chip-del").addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          removeItem(day, item.uid);
+          renderWeek();
+        });
+
+        slot.appendChild(chip);
+      });
+
+      col.appendChild(head);
+      col.appendChild(slot);
+      weekEl.appendChild(col);
+    });
+  }
+
+  function renderAll(){ renderStorage(); renderWeek(); }
+
+  async function copyTextToClipboard(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    }catch{
+      try{
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      }catch{
+        return false;
+      }
+    }
+  }
+
+  function truncateInline(text, maxLen){
+    const s = String(text || "").replace(/\s+/g, " ").trim();
+    if (!s) return "";
+    if (s.length <= maxLen) return s;
+    return s.slice(0, maxLen - 1) + "…";
+  }
+  function safeMdText(s){ return String(s ?? "").replaceAll("~~", "∼∼").trim(); }
+
+  function buildWeeklySummaryText(){
+    const now = new Date();
+    const stamp = now.toLocaleDateString("ko-KR");
+    const lines = [];
+    lines.push(`주간 기록 ${stamp}`);
+    lines.push("");
+
+    let firstDay = true;
+    for (const d of days){
+      const arr = board[d] || [];
+      if (!arr.length) continue;
+
+      if (!firstDay) lines.push("");
+      firstDay = false;
+
+      lines.push(`[${d}]`);
+
+      for (let i = 0; i < arr.length; i++){
+        const it = arr[i];
+        const mark = it.done ? "✓" : "x";
+        const noteShort = truncateInline(it.note, 60);
+        const notePart = noteShort ? ` - ${safeMdText(noteShort)}` : "";
+        lines.push(`${mark} ${safeMdText(it.label)}${notePart}`);
+
+        const ck = Array.isArray(it.checklist) ? it.checklist : [];
+        for (const c of ck){
+          const t = safeMdText(c.text);
+          lines.push(`  - ${c.done ? `~~${t}~~` : t}`);
+        }
+
+        if (i !== arr.length - 1) lines.push("");
+      }
+    }
+
+    if (firstDay) return `주간 기록 ${stamp}\n\n(비어있음)`;
+    return lines.join("\n").trim();
+  }
+
+  document.addEventListener("pointerdown", (e) => {
+    if (!activeDeleteChip) return;
+    if (e.target.closest(".chip-del")) return;
+    const insideActive = e.target.closest(".chip") === activeDeleteChip;
+    if (!insideActive) hideAllDeleteButtons();
+  }, { capture:true });
+
+  document.addEventListener("click", (e) => {
+    const inPop = notePop.contains(e.target);
+    const onChip = e.target.closest && e.target.closest(".chip");
+    if (!inPop && notePop.style.display === "flex" && !onChip){
+      closeNotePop();
+    }
+  });
+
+let lastW = window.innerWidth;
+
+window.addEventListener("resize", () => {
+  const w = window.innerWidth;
+  const widthChanged = Math.abs(w - lastW) > 30; // 회전/레이아웃 변화급만 감지
+  lastW = w;
+
+  // ✅ 키보드로 인한 세로 변화는 무시 (팝오버 유지)
+  if (widthChanged && notePop.style.display === "flex") {
+    closeNotePop();
+  }
+});
+
+  addTaskBtn.onclick = addTask;
+  taskInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
+  noteInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
+
+  noteCloseBtn.onclick = closeNotePop;
+  modalBackdrop.onclick = closeNotePop;
+
+  checkAddBtn.onclick = addChecklistItem;
+  checkInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter"){
+      e.preventDefault();
+      addChecklistItem();
+    }
+  });
+
+  copyWeekBtn.onclick = async () => {
+    const text = buildWeeklySummaryText();
+    const ok = await copyTextToClipboard(text);
+    alert(ok ? "이번 주차 기록 복사했어." : "복사 실패했어. 브라우저 권한 확인해줘.");
+  };
+
+  newWeekBtn.onclick = async () => {
+    if (!confirm("새로운 주차로 넘어갈까? 지금 배치 다 비워져.")) return;
+
+    const text = buildWeeklySummaryText();
+    await copyTextToClipboard(text);
+
+    board = emptyBoard();
+    selectedDay = "Mon";
+    closeNotePop();
+    hideAllDeleteButtons();
+    saveState();
+    renderWeek();
+
+    alert("새로운 주차로 초기화했어. 직전 기록은 클립보드에 복사됐을 수 있어.");
+  };
+
+  loadState();
+  renderAll();
+})();
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", async () => {
+      try {
+        const reg = await navigator.serviceWorker.register("./sw.js?v=12");
+        reg.update();
+      } catch (err) {
+        console.log("SW register failed:", err);
+      }
+    });
+  }
+</script>
+</body>
+</html>
