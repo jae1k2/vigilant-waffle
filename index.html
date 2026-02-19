@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>주간 블록 보드</title>
+  <title>주간 보드</title>
 
   <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#ffffff">
@@ -21,20 +21,16 @@
 
       --radius:14px;
       --gap:10px;
-
-      /* ✅ 팝오버 내부 기준 간격(원하는 만큼 9~12로 튜닝 가능) */
       --ui-gap:10px;
+
+      --shadow: 0 14px 34px rgba(16,24,40,.18);
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-
     html, body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
+      margin:0; background:var(--bg); color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
     }
-
     .app{ max-width:1080px; margin:0 auto; padding:12px; }
 
     .panel{
@@ -45,10 +41,10 @@
       margin-bottom:12px;
     }
 
+    /* 상단 입력 */
     .add-row{
       display:flex;
       gap:8px;
-      margin-bottom:10px;
       flex-wrap:wrap;
       align-items:stretch;
     }
@@ -63,11 +59,10 @@
       color:#111827;
       font-weight:600;
     }
+    .add-row input::placeholder{ color:#9aa3b2; font-weight:500; }
 
     #taskInput{ flex:1 1 260px; min-width:170px; }
-    #noteInput{ flex:1 1 380px; min-width:220px; color:#2f3a4a; font-weight:500; }
-
-    .add-row input::placeholder{ color:#9aa3b2; font-weight:500; }
+    #noteInput{ flex:1 1 380px; min-width:220px; font-weight:500; color:#2f3a4a; }
 
     .add-row button{
       border:1px solid #c8cad0;
@@ -78,24 +73,52 @@
       font-size:14px;
       font-weight:600;
       cursor:pointer;
+      white-space:nowrap;
     }
 
-    .storage{
+    /* 주간 보드 */
+    .week{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:10px;
+    }
+
+    .day{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      min-height:120px;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    .day-head{
+      padding:8px 10px;
+      font-weight:400;
+      font-size:14px;
+      border-bottom:1px solid #ececf0;
+      background:#fafafa;
+      cursor:pointer;
+      transition:background .15s, border-bottom-color .15s;
+      user-select:none;
+    }
+    .day.selected .day-head{
+      background:#eaf3ff;
+      border-bottom-color:#d7e6ff;
+    }
+
+    .slot{
+      padding:8px;
       display:flex;
       flex-wrap:wrap;
+      gap:8px;
       align-content:flex-start;
-      gap:var(--gap);
-      padding:var(--gap);
-      overflow-y:auto;
-      overflow-x:hidden;
-      max-height:132px;
-      border-radius:12px;
-      background:rgba(255,255,255,.45);
-      border:1px solid rgba(148,163,184,.25);
-      min-height:54px;
+      min-height:84px;
+      cursor:pointer;
     }
 
-    /* ✅ 탭(칩) 제목 볼드 제거 */
+    /* 칩 */
     .chip{
       height:42px;
       border:1px solid #b8bbc2;
@@ -113,8 +136,9 @@
       position:relative;
       width:auto;
       max-width:100%;
-      touch-action:manipulation;
+      touch-action:none; /* 드래그 안정 */
     }
+    .chip:active{ transform:scale(.99); }
 
     .chip-text{
       white-space:nowrap;
@@ -125,6 +149,38 @@
       font-weight:500;
     }
 
+    .ck-count{
+      flex:0 0 auto;
+      font-size:12px;
+      font-weight:600;
+      padding:2px 7px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.5);
+      background:rgba(255,255,255,.65);
+      color:#374151;
+      display:none;
+    }
+    .chip.has-ck .ck-count{ display:inline-flex; }
+
+    /* 완료 스타일 */
+    .chip.done{
+      background:var(--done-bg) !important;
+      border-color:var(--done-border) !important;
+      color:var(--done-text);
+    }
+    .chip.done .chip-text{
+      text-decoration:line-through;
+      text-decoration-thickness:1.5px;
+      opacity:.9;
+    }
+    .chip.done .ck-count{
+      color:var(--done-text);
+      border-color:var(--done-border);
+      background:rgba(238,240,243,.9);
+      opacity:.95;
+    }
+
+    /* 삭제 버튼(롱프레스 활성) */
     .chip-del{
       width:22px;
       height:22px;
@@ -140,8 +196,8 @@
       padding:0;
       flex:0 0 auto;
       transform-origin:center;
+      touch-action:manipulation;
     }
-
     .chip.show-del{ box-shadow:0 0 0 2px rgba(239,68,68,.22); }
     .chip.show-del .chip-del{ display:grid; }
 
@@ -150,88 +206,30 @@
     .chip.del-anim{ animation:haloIn .16s ease-out; }
     .chip.del-anim .chip-del{ animation:popIn .16s ease-out; }
 
-    .week{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
-      gap:10px;
+    /* 드래그 중 고스트 */
+    .drag-ghost{
+      position:fixed;
+      z-index:2000;
+      pointer-events:none;
+      opacity:.92;
+      transform:translate(-50%,-50%);
+      box-shadow: var(--shadow);
     }
-
-    .day{
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:12px;
-      min-height:120px;
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-      transition:.15s;
-    }
-
-    .day-head{
-      padding:8px 10px;
-      font-weight:400;
-      font-size:14px;
-      border-bottom:1px solid #ececf0;
-      background:#fafafa;
-      cursor:pointer;
-      transition:background .15s, border-bottom-color .15s;
-    }
-
-    .day.selected .day-head{
-      background:#eaf3ff;
-      border-bottom-color:#d7e6ff;
-    }
-
-    .slot{
-      padding:8px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      align-content:flex-start;
-      min-height:84px;
-      cursor:pointer;
-    }
-
-    .item{ transition:background .18s, border-color .18s, color .18s, transform .08s; }
-    .item:active{ transform:scale(.99); }
-
-    .ck-count{
-      flex:0 0 auto;
-      font-size:12px;
-      font-weight:600;
-      padding:2px 7px;
+    .drag-placeholder{
+      width:46px;
+      height:42px;
       border-radius:999px;
-      border:1px solid rgba(148,163,184,.5);
-      background:rgba(255,255,255,.65);
-      color:#374151;
-      display:none;
-    }
-    .item.has-ck .ck-count{ display:inline-flex; }
-
-    .item.done{
-      background:var(--done-bg) !important;
-      border-color:var(--done-border) !important;
-      color:var(--done-text);
-    }
-    .item.done .chip-text{
-      text-decoration:line-through;
-      text-decoration-thickness:1.5px;
-      opacity:.9;
-    }
-    .item.done .ck-count{
-      color:var(--done-text);
-      border-color:var(--done-border);
-      background:rgba(238,240,243,.9);
-      opacity:.95;
+      border:2px dashed rgba(148,163,184,.7);
+      background:rgba(148,163,184,.08);
     }
 
+    /* 하단 버튼 */
     .toolbar{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
       margin-top:10px;
     }
-
     .toolbar button{
       border:1px solid #c8cad0;
       background:#fff;
@@ -243,6 +241,7 @@
       cursor:pointer;
     }
 
+    /* 모달 */
     .modal-backdrop{
       position:fixed;
       inset:0;
@@ -256,7 +255,7 @@
     }
     .modal-backdrop.show{ opacity:1; }
 
-    /* ✅ 팝오버: gap이 확실히 먹도록(열 때 display:flex로 켬) */
+    /* 팝오버 */
     .note-pop{
       position:fixed;
       z-index:60;
@@ -267,16 +266,15 @@
       background:#fff;
       border:1px solid #d7dce6;
       border-radius:12px;
-      box-shadow:0 14px 34px rgba(16,24,40,.18);
+      box-shadow: var(--shadow);
 
       padding:12px;
 
-      display:none;          /* <- 기본은 숨김 */
+      display:none;
       opacity:0;
       transform:translateY(6px);
       transition:opacity .14s ease, transform .14s ease;
 
-      /* flex는 열 때 JS에서 켜줌 */
       flex-direction:column;
       gap:var(--ui-gap);
     }
@@ -286,12 +284,11 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:10px; /* 수평만 */
+      gap:10px;
     }
-
     .note-top .ttl{
       font-size:16px;
-      font-weight:600; /* 제목도 과볼드 방지 */
+      font-weight:600;
       color:#2f3a4a;
       min-width:0;
       overflow:hidden;
@@ -299,7 +296,12 @@
       white-space:nowrap;
       line-height:1.25;
     }
-
+    .note-actions{
+      display:flex;
+      gap:8px;
+      flex:0 0 auto;
+      align-items:center;
+    }
     .note-btn{
       border:1px solid #c8cad0;
       background:#fff;
@@ -310,7 +312,6 @@
       font-weight:600;
       cursor:pointer;
       white-space:nowrap;
-      flex:0 0 auto;
     }
 
     .note-body{
@@ -322,7 +323,7 @@
       min-height:44px;
 
       display:flex;
-      align-items:center;           /* 왼쪽 중앙 정렬 느낌 */
+      align-items:center;
       justify-content:flex-start;
       text-align:left;
 
@@ -332,16 +333,42 @@
       white-space:pre-wrap;
       word-break:break-word;
     }
-
     .note-empty{ color:#8a93a2; font-style:normal; }
 
+    /* 수정 모드 */
+    .edit-wrap{
+      display:none;
+      flex-direction:column;
+      gap:var(--ui-gap);
+    }
+    .edit-wrap input, .edit-wrap textarea{
+      width:100%;
+      border:1px solid rgba(148,163,184,.45);
+      border-radius:10px;
+      background:rgba(255,255,255,.85);
+      color:#111827;
+      font-size:13px;
+      padding:8px 10px;
+      outline:none;
+    }
+    .edit-wrap textarea{
+      min-height:84px;
+      resize:vertical;
+      line-height:1.5;
+    }
+    .edit-actions{
+      display:flex;
+      gap:8px;
+      justify-content:flex-end;
+    }
+
+    /* 체크리스트 */
     .check-wrap{
       width:100%;
       display:flex;
       flex-direction:column;
       gap:var(--ui-gap);
     }
-
     .check-list{
       display:flex;
       flex-direction:column;
@@ -352,7 +379,6 @@
       overflow:auto;
       padding-right:2px;
     }
-
     .check-item{
       display:flex;
       align-items:flex-start;
@@ -366,7 +392,6 @@
       opacity:.78;
       background:rgba(238,240,243,.85);
     }
-
     .check-toggle{
       margin-top:2px;
       width:16px;
@@ -374,7 +399,6 @@
       flex:0 0 auto;
       cursor:pointer;
     }
-
     .check-text{
       flex:1 1 auto;
       font-size:13px;
@@ -382,12 +406,10 @@
       color:#243041;
       word-break:break-word;
     }
-
     .check-item.done .check-text{
       text-decoration:line-through;
       color:#6b7280;
     }
-
     .check-del{
       width:22px;
       height:22px;
@@ -401,13 +423,11 @@
       cursor:pointer;
       flex:0 0 auto;
     }
-
     .check-add{
       display:flex;
-      gap:var(--ui-gap); /* ✅ 기준 간격 */
+      gap:var(--ui-gap);
       align-items:center;
     }
-
     .check-add input{
       flex:1 1 auto;
       height:34px;
@@ -418,9 +438,7 @@
       background:rgba(255,255,255,.85);
       color:#111827;
     }
-
     .check-add input::placeholder{ color:#9aa3b2; font-weight:600; }
-
     .check-add button{
       height:34px;
       border:1px solid #c8cad0;
@@ -432,12 +450,28 @@
       cursor:pointer;
       white-space:nowrap;
     }
-
     .check-limit{
       font-size:12px;
-      font-weight:800;
+      font-weight:600;
       color:#6b7280;
       margin:0;
+    }
+
+    /* 복제 섹션 */
+    .dup-row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .dup-row select{
+      flex:1 1 auto;
+      height:34px;
+      border:1px solid #cbd5e1;
+      border-radius:9px;
+      padding:0 10px;
+      font-size:13px;
+      background:rgba(255,255,255,.85);
+      color:#111827;
     }
 
     @media (min-width:700px){
@@ -459,15 +493,12 @@
       <input id="noteInput" type="text" placeholder="여기에는 설명을 입력해줘" />
       <button id="addTaskBtn">+ 과제 추가</button>
     </div>
-
-    <div class="storage" id="storage"></div>
   </div>
 
   <div class="panel">
     <div class="week" id="week"></div>
     <div class="toolbar">
       <button id="newWeek">새로운 주차</button>
-      <button id="copyWeek">이번 주차 복사</button>
     </div>
   </div>
 </div>
@@ -477,10 +508,35 @@
 <div class="note-pop" id="notePop">
   <div class="note-top">
     <div class="ttl" id="notePopTitle">메모</div>
-    <button class="note-btn" id="noteCloseBtn">닫기</button>
+    <div class="note-actions">
+      <button class="note-btn" id="editBtn">수정</button>
+      <button class="note-btn" id="dupBtn">복제</button>
+      <button class="note-btn" id="noteCloseBtn">닫기</button>
+    </div>
   </div>
 
+  <!-- 보기 모드 -->
   <div class="note-body" id="notePopBody"></div>
+
+  <!-- 수정 모드 -->
+  <div class="edit-wrap" id="editWrap">
+    <input id="editTitle" type="text" placeholder="제목" />
+    <textarea id="editNote" placeholder="설명"></textarea>
+    <div class="edit-actions">
+      <button class="note-btn" id="editCancel">취소</button>
+      <button class="note-btn" id="editSave">저장</button>
+    </div>
+  </div>
+
+  <!-- 복제 모드 -->
+  <div class="dup-row" id="dupRow" style="display:none;">
+    <select id="dupDay">
+      <option value="Sun">Sun</option><option value="Mon">Mon</option><option value="Tue">Tue</option>
+      <option value="Wed">Wed</option><option value="Thu">Thu</option><option value="Fri">Fri</option>
+      <option value="Sat">Sat</option>
+    </select>
+    <button class="note-btn" id="dupDo">생성</button>
+  </div>
 
   <div class="check-wrap">
     <div id="checklistList" class="check-list"></div>
@@ -495,7 +551,7 @@
 <script>
 (() => {
   const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const STORAGE_KEY = "weekly-board-state-v10";
+  const STORAGE_KEY = "weekly-board-state-dnd-v1";
 
   const LONG_PRESS_MS = 520;
   const CLICK_DELAY = 220;
@@ -517,51 +573,69 @@
   ];
   const colorMap = Object.fromEntries(pastelPalette.map(c => [c.key, c]));
 
-  function emptyBoard() { return Object.fromEntries(days.map(d => [d, []])); }
+  function emptyBoard(){ return Object.fromEntries(days.map(d => [d, []])); }
 
   let selectedDay = "Mon";
   let boardUid = 1;
-  let taskUid = 1;
   let lastColorKey = null;
 
-  let tasks = [];
   let board = emptyBoard();
 
   let clickTimer = null;
+  let activeDeleteChip = null;
 
+  // 팝오버 상태
   let popState = { day:null, uid:null };
   let popCloseTimer = null;
   let backdropCloseTimer = null;
 
-  let activeDeleteChip = null;
+  // 드래그 상태
+  let drag = {
+    active:false,
+    startX:0, startY:0,
+    pointerId:null,
+    srcDay:null, srcIndex:-1,
+    uid:null,
+    ghost:null,
+    placeholder:null,
+    overDay:null,
+    overIndex:-1
+  };
 
   const weekEl = document.getElementById("week");
-  const storageEl = document.getElementById("storage");
-
   const taskInput = document.getElementById("taskInput");
   const noteInput = document.getElementById("noteInput");
   const addTaskBtn = document.getElementById("addTaskBtn");
   const newWeekBtn = document.getElementById("newWeek");
-  const copyWeekBtn = document.getElementById("copyWeek");
 
   const modalBackdrop = document.getElementById("modalBackdrop");
   const notePop = document.getElementById("notePop");
   const notePopTitle = document.getElementById("notePopTitle");
   const notePopBody = document.getElementById("notePopBody");
   const noteCloseBtn = document.getElementById("noteCloseBtn");
+
   const checklistList = document.getElementById("checklistList");
   const checkInput = document.getElementById("checkInput");
   const checkAddBtn = document.getElementById("checkAddBtn");
   const checkLimitHint = document.getElementById("checkLimitHint");
 
+  const editBtn = document.getElementById("editBtn");
+  const editWrap = document.getElementById("editWrap");
+  const editTitle = document.getElementById("editTitle");
+  const editNote = document.getElementById("editNote");
+  const editCancel = document.getElementById("editCancel");
+  const editSave = document.getElementById("editSave");
+
+  const dupBtn = document.getElementById("dupBtn");
+  const dupRow = document.getElementById("dupRow");
+  const dupDay = document.getElementById("dupDay");
+  const dupDo = document.getElementById("dupDo");
+
   const sanitizeLabel = s => (s || "").replace(/\s+/g, " ").trim();
   const normalizeNote = s => (s || "").replace(/\r\n/g, "\n").trim();
   const escapeHtml = s => String(s)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#39;");
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#39;");
 
   function normalizeChecklist(list){
     if (!Array.isArray(list)) return [];
@@ -579,29 +653,21 @@
 
   function randomColorKey(){
     const keys = pastelPalette.map(c => c.key);
-    const pool = (lastColorKey && keys.length > 1)
-      ? keys.filter(k => k !== lastColorKey)
-      : keys;
+    const pool = (lastColorKey && keys.length > 1) ? keys.filter(k => k !== lastColorKey) : keys;
     const picked = pool[Math.floor(Math.random() * pool.length)];
     lastColorKey = picked;
     return picked;
   }
 
-  function safeLocalStorageGet(key){
-    try { return localStorage.getItem(key); } catch { return null; }
-  }
-  function safeLocalStorageSet(key, value){
-    try { localStorage.setItem(key, value); } catch {}
-  }
+  function safeLocalStorageGet(key){ try{ return localStorage.getItem(key); }catch{ return null; } }
+  function safeLocalStorageSet(key, value){ try{ localStorage.setItem(key, value); }catch{} }
 
   function saveState(){
     const payload = {
-      version: 10,
+      version: 1,
       selectedDay,
       boardUid,
-      taskUid,
       lastColorKey,
-      tasks,
       board
     };
     safeLocalStorageSet(STORAGE_KEY, JSON.stringify(payload));
@@ -615,7 +681,6 @@
       const arr = Array.isArray(rawBoard[day]) ? rawBoard[day] : [];
       normalized[day] = arr.map(item => ({
         uid: String(item?.uid ?? "u" + Math.random().toString(36).slice(2)),
-        sourceTid: item?.sourceTid ? String(item.sourceTid) : null,
         label: sanitizeLabel(String(item?.label ?? "")),
         note: normalizeNote(String(item?.note ?? "")),
         colorKey: colorMap[item?.colorKey] ? item.colorKey : pastelPalette[0].key,
@@ -629,34 +694,18 @@
   function loadState(){
     const raw = safeLocalStorageGet(STORAGE_KEY);
     if (!raw) return;
-
     try{
       const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== "object") return;
-
       const loadedSelected = String(parsed.selectedDay || "Mon");
       selectedDay = days.includes(loadedSelected) ? loadedSelected : "Mon";
-
       boardUid = Number.isFinite(parsed.boardUid) ? Math.max(1, Math.floor(parsed.boardUid)) : 1;
-      taskUid = Number.isFinite(parsed.taskUid) ? Math.max(1, Math.floor(parsed.taskUid)) : 1;
       lastColorKey = colorMap[parsed.lastColorKey] ? parsed.lastColorKey : null;
-
-      const loadedTasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
-      tasks = loadedTasks.map(t => ({
-        tid: String(t?.tid ?? "t" + Math.random().toString(36).slice(2)),
-        label: sanitizeLabel(String(t?.label ?? "")),
-        note: normalizeNote(String(t?.note ?? "")),
-        colorKey: colorMap[t?.colorKey] ? t.colorKey : pastelPalette[0].key
-      })).filter(t => t.label);
-
       board = normalizeLoadedBoard(parsed.board);
     }catch{}
   }
 
   function vibrateTick(){
-    try{
-      if (navigator && typeof navigator.vibrate === "function") navigator.vibrate(18);
-    }catch{}
+    try{ if (navigator && typeof navigator.vibrate === "function") navigator.vibrate(18); }catch{}
   }
   function nowSuppressed(){ return Date.now() < suppressClicksUntil; }
 
@@ -714,9 +763,7 @@
   function hideBackdrop(){
     modalBackdrop.classList.remove("show");
     clearTimeout(backdropCloseTimer);
-    backdropCloseTimer = setTimeout(() => {
-      modalBackdrop.style.display = "none";
-    }, 150);
+    backdropCloseTimer = setTimeout(() => { modalBackdrop.style.display = "none"; }, 150);
   }
 
   function applyPopColorByKey(colorKey){
@@ -771,8 +818,7 @@
       });
 
       row.querySelector(".check-del").addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
         list.splice(idx, 1);
         if (item.done && hasIncompleteChecklist(item)) item.done = false;
         saveState();
@@ -796,14 +842,30 @@
     }
   }
 
+  function setMode(view){
+    // view | edit | dup
+    if (view === "edit"){
+      notePopBody.style.display = "none";
+      editWrap.style.display = "flex";
+      dupRow.style.display = "none";
+    }else if (view === "dup"){
+      notePopBody.style.display = "";
+      editWrap.style.display = "none";
+      dupRow.style.display = "flex";
+    }else{
+      notePopBody.style.display = "";
+      editWrap.style.display = "none";
+      dupRow.style.display = "none";
+    }
+  }
+
   function positionPopNearAnchor(anchorEl){
     const pad = 8;
     const margin = 12;
 
-    /* ✅ 핵심: flex로 켜야 gap이 제대로 먹음 */
     notePop.style.left = "-9999px";
     notePop.style.top = "-9999px";
-    notePop.style.display = "flex";
+    notePop.style.display = "flex"; // ✅ gap 살아있게
 
     const a = anchorEl.getBoundingClientRect();
     const p = notePop.getBoundingClientRect();
@@ -843,6 +905,10 @@
       checkLimitHint.textContent = "";
       checkAddBtn.disabled = false;
       checkInput.disabled = false;
+
+      editTitle.value = "";
+      editNote.value = "";
+      setMode("view");
     }, 150);
   }
 
@@ -855,6 +921,14 @@
     setViewMode(item.label, item.note || "");
     renderChecklist(item);
 
+    // edit fields prime
+    editTitle.value = item.label;
+    editNote.value = item.note || "";
+
+    // dup default: current selectedDay
+    dupDay.value = selectedDay;
+
+    setMode("view");
     showBackdrop();
     notePop.classList.remove("show");
     positionPopNearAnchor(anchorEl);
@@ -887,6 +961,55 @@
     saveState();
     renderChecklist(item);
     renderWeek();
+  }
+
+  function removeItem(day, uidValue){
+    const arr = board[day];
+    const idx = arr.findIndex(x => x.uid === uidValue);
+    if (idx > -1) arr.splice(idx, 1);
+    if (popState.uid === uidValue && popState.day === day) closeNotePop();
+    saveState();
+  }
+
+  function duplicateItem(toDay){
+    const { day, uid } = popState;
+    if (!day || !uid) return;
+    const item = findBoardItem(day, uid);
+    if (!item) return;
+
+    board[toDay].push({
+      uid: "u" + (boardUid++),
+      label: item.label,
+      note: item.note,
+      colorKey: item.colorKey,
+      done:false,
+      checklist: [] // ✅ 복제는 체크리스트는 새로 시작
+    });
+    saveState();
+    renderWeek();
+  }
+
+  function saveEdits(){
+    const { day, uid } = popState;
+    if (!day || !uid) return;
+    const item = findBoardItem(day, uid);
+    if (!item) return;
+
+    const newTitle = sanitizeLabel(editTitle.value);
+    const newNote = normalizeNote(editNote.value);
+
+    if (!newTitle){
+      alert("제목은 비워둘 수 없어.");
+      return;
+    }
+
+    item.label = newTitle;
+    item.note = newNote;
+
+    saveState();
+    setViewMode(item.label, item.note || "");
+    renderWeek();
+    setMode("view");
   }
 
   function attachLongPressShowDelete(el){
@@ -928,6 +1051,153 @@
     el.addEventListener("contextmenu", (e) => e.preventDefault());
   }
 
+  /* ===== 드래그&드롭 (모바일 포함) ===== */
+  function startDrag(chipEl, day, index, uid, e){
+    if (chipEl.classList.contains("show-del")) return;
+    if (e.target.closest(".chip-del")) return;
+
+    drag.active = true;
+    drag.pointerId = e.pointerId;
+    drag.startX = e.clientX;
+    drag.startY = e.clientY;
+    drag.srcDay = day;
+    drag.srcIndex = index;
+    drag.uid = uid;
+
+    // placeholder
+    const ph = document.createElement("div");
+    ph.className = "drag-placeholder";
+    drag.placeholder = ph;
+    chipEl.parentNode.insertBefore(ph, chipEl.nextSibling);
+
+    // ghost
+    const ghost = chipEl.cloneNode(true);
+    ghost.classList.add("drag-ghost");
+    ghost.classList.remove("show-del");
+    ghost.querySelectorAll(".chip-del").forEach(b => b.remove());
+    document.body.appendChild(ghost);
+    drag.ghost = ghost;
+    moveGhost(e.clientX, e.clientY);
+
+    // hide original
+    chipEl.style.visibility = "hidden";
+
+    chipEl.setPointerCapture(e.pointerId);
+    suppressClicksUntil = Date.now() + 400;
+  }
+
+  function moveGhost(x, y){
+    if (!drag.ghost) return;
+    drag.ghost.style.left = x + "px";
+    drag.ghost.style.top = y + "px";
+  }
+
+  function findDropTarget(x, y){
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+
+    const slot = el.closest(".slot");
+    if (!slot) return null;
+
+    const dayEl = slot.closest(".day");
+    const day = dayEl?.dataset?.day;
+    if (!day) return null;
+
+    // index 계산: slot 내의 chip들 가운데 어느 위치에 놓을지
+    const chips = Array.from(slot.querySelectorAll(".chip")).filter(c => c.style.visibility !== "hidden");
+    let idx = chips.length;
+
+    for (let i = 0; i < chips.length; i++){
+      const r = chips[i].getBoundingClientRect();
+      const mid = r.left + r.width / 2;
+      // 같은 줄 고려: y가 비슷하면 x 기준, 아니면 아래쪽이면 뒤로
+      const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
+      if (sameRow && x < mid){
+        idx = i; break;
+      }
+      // 줄이 위에 있고 내가 더 위면 앞
+      if (y < r.top + r.height/2){
+        idx = i; break;
+      }
+    }
+    return { day, slot, idx };
+  }
+
+  function placePlaceholder(target){
+    if (!drag.placeholder) return;
+    const slot = target.slot;
+    const chips = Array.from(slot.children).filter(n => n !== drag.placeholder);
+    const before = chips[target.idx] || null;
+    slot.insertBefore(drag.placeholder, before);
+    drag.overDay = target.day;
+    drag.overIndex = target.idx;
+  }
+
+  function finishDrag(){
+    if (!drag.active) return;
+
+    // 원래 chip 복구
+    const hiddenChip = document.querySelector(`.chip[data-uid="${drag.uid}"][data-day="${drag.srcDay}"]`);
+    if (hiddenChip) hiddenChip.style.visibility = "";
+
+    // 데이터 이동
+    const fromDay = drag.srcDay;
+    const toDay = drag.overDay ?? fromDay;
+
+    // placeholder 기준 index
+    let toIndex = drag.overIndex;
+    if (!Number.isFinite(toIndex) || toIndex < 0) toIndex = (board[toDay] || []).length;
+
+    // 실제 item
+    const srcArr = board[fromDay] || [];
+    const srcIdx = srcArr.findIndex(x => x.uid === drag.uid);
+    if (srcIdx === -1){
+      cleanupDrag();
+      renderWeek();
+      return;
+    }
+    const [item] = srcArr.splice(srcIdx, 1);
+
+    const dstArr = board[toDay] || (board[toDay] = []);
+    // 같은 리스트 내 이동이면, 제거로 인해 index 보정
+    if (fromDay === toDay && srcIdx < toIndex) toIndex = Math.max(0, toIndex - 1);
+
+    toIndex = Math.min(dstArr.length, Math.max(0, toIndex));
+    dstArr.splice(toIndex, 0, item);
+
+    // 선택 요일도 이동한 요일로
+    selectedDay = toDay;
+
+    saveState();
+    cleanupDrag();
+    renderWeek();
+  }
+
+  function cancelDrag(){
+    if (!drag.active) return;
+    const hiddenChip = document.querySelector(`.chip[data-uid="${drag.uid}"][data-day="${drag.srcDay}"]`);
+    if (hiddenChip) hiddenChip.style.visibility = "";
+    cleanupDrag();
+    renderWeek();
+  }
+
+  function cleanupDrag(){
+    drag.active = false;
+    drag.pointerId = null;
+
+    if (drag.ghost && drag.ghost.parentNode) drag.ghost.parentNode.removeChild(drag.ghost);
+    drag.ghost = null;
+
+    if (drag.placeholder && drag.placeholder.parentNode) drag.placeholder.parentNode.removeChild(drag.placeholder);
+    drag.placeholder = null;
+
+    drag.overDay = null;
+    drag.overIndex = -1;
+    drag.srcDay = null;
+    drag.srcIndex = -1;
+    drag.uid = null;
+  }
+
   function addTask(){
     const label = sanitizeLabel(taskInput.value);
     if (!label) return;
@@ -935,88 +1205,19 @@
     const note = normalizeNote(noteInput.value);
     const colorKey = randomColorKey();
 
-    tasks.push({
-      tid: "t" + (taskUid++),
+    board[selectedDay].push({
+      uid: "u" + (boardUid++),
       label,
       note,
-      colorKey
+      colorKey,
+      done:false,
+      checklist:[]
     });
 
     taskInput.value = "";
     noteInput.value = "";
     saveState();
-    renderStorage();
-  }
-
-  function deleteTaskFromStorage(taskObj){
-    tasks = tasks.filter(t => t.tid !== taskObj.tid);
-    for (const d of days){
-      board[d] = board[d].filter(i => i.sourceTid !== taskObj.tid);
-    }
-    closeNotePop();
-    saveState();
-    renderAll();
-  }
-
-  function removeItem(day, uidValue){
-    const arr = board[day];
-    const idx = arr.findIndex(x => x.uid === uidValue);
-    if (idx > -1) arr.splice(idx, 1);
-    if (popState.uid === uidValue && popState.day === day) closeNotePop();
-    saveState();
-  }
-
-  function renderStorage(){
-    storageEl.innerHTML = "";
-
-    if (!tasks.length){
-      const empty = document.createElement("div");
-      empty.style.fontSize = "13px";
-      empty.style.color = "#666b74";
-      empty.textContent = "아직 과제가 없어. 위에서 추가해줘.";
-      storageEl.appendChild(empty);
-      return;
-    }
-
-    tasks.forEach(taskObj => {
-      const pill = document.createElement("div");
-      pill.className = "chip template";
-      pill.style.cssText = pillStyle(taskObj.colorKey);
-
-      pill.innerHTML = `
-        <span class="chip-text" title="${escapeHtml(taskObj.label)}">${escapeHtml(taskObj.label)}</span>
-        <button type="button" class="chip-del" aria-label="delete">×</button>
-      `;
-
-      attachLongPressShowDelete(pill);
-
-      pill.addEventListener("click", (e) => {
-        if (nowSuppressed()) return;
-        if (e.target.closest(".chip-del")) return;
-        if (pill.classList.contains("show-del")) return;
-
-        board[selectedDay].push({
-          uid: "u" + (boardUid++),
-          sourceTid: taskObj.tid,
-          label: taskObj.label,
-          note: taskObj.note,
-          colorKey: taskObj.colorKey,
-          done:false,
-          checklist:[]
-        });
-
-        saveState();
-        renderWeek();
-      });
-
-      pill.querySelector(".chip-del").addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        deleteTaskFromStorage(taskObj);
-      });
-
-      storageEl.appendChild(pill);
-    });
+    renderWeek();
   }
 
   function renderWeek(){
@@ -1025,6 +1226,7 @@
     days.forEach(day => {
       const col = document.createElement("div");
       col.className = "day" + (day === selectedDay ? " selected" : "");
+      col.dataset.day = day;
 
       const head = document.createElement("div");
       head.className = "day-head";
@@ -1045,11 +1247,14 @@
         renderWeek();
       };
 
-      (board[day] || []).forEach(item => {
+      (board[day] || []).forEach((item, idx) => {
         const ckLen = Array.isArray(item.checklist) ? item.checklist.length : 0;
 
         const chip = document.createElement("div");
         chip.className = "chip item" + (item.done ? " done" : "") + (ckLen ? " has-ck" : "");
+        chip.dataset.uid = item.uid;
+        chip.dataset.day = day;
+
         if (!item.done) chip.style.cssText = pillStyle(item.colorKey);
 
         chip.innerHTML = `
@@ -1060,7 +1265,45 @@
 
         attachLongPressShowDelete(chip);
 
+        // 드래그 시작(짧은 이동 threshold)
+        let dragArmed = false;
+        let sx = 0, sy = 0;
+
+        chip.addEventListener("pointerdown", (e) => {
+          if (nowSuppressed()) return;
+          if (e.button !== undefined && e.button !== 0) return;
+          if (e.target.closest(".chip-del")) return;
+          if (chip.classList.contains("show-del")) return;
+
+          dragArmed = true;
+          sx = e.clientX; sy = e.clientY;
+        });
+
+        chip.addEventListener("pointermove", (e) => {
+          if (!dragArmed) return;
+          if (drag.active) return;
+
+          const dx = Math.abs(e.clientX - sx);
+          const dy = Math.abs(e.clientY - sy);
+          if (dx + dy > 10){
+            dragArmed = false;
+            startDrag(chip, day, idx, item.uid, e);
+          }
+        });
+
+        chip.addEventListener("pointerup", (e) => {
+          if (drag.active) return;
+          dragArmed = false;
+        });
+
+        chip.addEventListener("pointercancel", () => {
+          if (drag.active) cancelDrag();
+          dragArmed = false;
+        });
+
+        // 클릭: 팝오버 / 더블클릭: 완료
         chip.addEventListener("click", (e) => {
+          if (drag.active) return;
           if (nowSuppressed()) return;
           if (e.target.closest(".chip-del")) return;
           if (chip.classList.contains("show-del")) return;
@@ -1076,6 +1319,7 @@
         });
 
         chip.addEventListener("dblclick", (e) => {
+          if (drag.active) return;
           if (nowSuppressed()) return;
           if (e.target.closest(".chip-del")) return;
           e.preventDefault();
@@ -1105,76 +1349,30 @@
     });
   }
 
-  function renderAll(){ renderStorage(); renderWeek(); }
+  /* 전역 드래그 핸들 */
+  document.addEventListener("pointermove", (e) => {
+    if (!drag.active) return;
+    if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
 
-  async function copyTextToClipboard(text){
-    try{
-      await navigator.clipboard.writeText(text);
-      return true;
-    }catch{
-      try{
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.position = "fixed";
-        ta.style.left = "-9999px";
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        const ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-        return ok;
-      }catch{
-        return false;
-      }
-    }
-  }
+    moveGhost(e.clientX, e.clientY);
 
-  function truncateInline(text, maxLen){
-    const s = String(text || "").replace(/\s+/g, " ").trim();
-    if (!s) return "";
-    if (s.length <= maxLen) return s;
-    return s.slice(0, maxLen - 1) + "…";
-  }
-  function safeMdText(s){ return String(s ?? "").replaceAll("~~", "∼∼").trim(); }
+    const t = findDropTarget(e.clientX, e.clientY);
+    if (t) placePlaceholder(t);
+  }, { passive:true });
 
-  function buildWeeklySummaryText(){
-    const now = new Date();
-    const stamp = now.toLocaleDateString("ko-KR");
-    const lines = [];
-    lines.push(`주간 기록 ${stamp}`);
-    lines.push("");
+  document.addEventListener("pointerup", (e) => {
+    if (!drag.active) return;
+    if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
+    finishDrag();
+  });
 
-    let firstDay = true;
-    for (const d of days){
-      const arr = board[d] || [];
-      if (!arr.length) continue;
+  document.addEventListener("pointercancel", (e) => {
+    if (!drag.active) return;
+    if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
+    cancelDrag();
+  });
 
-      if (!firstDay) lines.push("");
-      firstDay = false;
-
-      lines.push(`[${d}]`);
-
-      for (let i = 0; i < arr.length; i++){
-        const it = arr[i];
-        const mark = it.done ? "✓" : "x";
-        const noteShort = truncateInline(it.note, 60);
-        const notePart = noteShort ? ` - ${safeMdText(noteShort)}` : "";
-        lines.push(`${mark} ${safeMdText(it.label)}${notePart}`);
-
-        const ck = Array.isArray(it.checklist) ? it.checklist : [];
-        for (const c of ck){
-          const t = safeMdText(c.text);
-          lines.push(`  - ${c.done ? `~~${t}~~` : t}`);
-        }
-
-        if (i !== arr.length - 1) lines.push("");
-      }
-    }
-
-    if (firstDay) return `주간 기록 ${stamp}\n\n(비어있음)`;
-    return lines.join("\n").trim();
-  }
-
+  /* 삭제모드 해제 */
   document.addEventListener("pointerdown", (e) => {
     if (!activeDeleteChip) return;
     if (e.target.closest(".chip-del")) return;
@@ -1182,6 +1380,7 @@
     if (!insideActive) hideAllDeleteButtons();
   }, { capture:true });
 
+  /* 팝오버 밖 클릭 닫기 */
   document.addEventListener("click", (e) => {
     const inPop = notePop.contains(e.target);
     const onChip = e.target.closest && e.target.closest(".chip");
@@ -1190,19 +1389,16 @@
     }
   });
 
-let lastW = window.innerWidth;
+  /* 모바일 키보드 리사이즈 대응: 가로 변화일 때만 닫기 */
+  let lastW = window.innerWidth;
+  window.addEventListener("resize", () => {
+    const w = window.innerWidth;
+    const widthChanged = Math.abs(w - lastW) > 30;
+    lastW = w;
+    if (widthChanged && notePop.style.display === "flex") closeNotePop();
+  });
 
-window.addEventListener("resize", () => {
-  const w = window.innerWidth;
-  const widthChanged = Math.abs(w - lastW) > 30; // 회전/레이아웃 변화급만 감지
-  lastW = w;
-
-  // ✅ 키보드로 인한 세로 변화는 무시 (팝오버 유지)
-  if (widthChanged && notePop.style.display === "flex") {
-    closeNotePop();
-  }
-});
-
+  /* 버튼/입력 */
   addTaskBtn.onclick = addTask;
   taskInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
   noteInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
@@ -1218,30 +1414,43 @@ window.addEventListener("resize", () => {
     }
   });
 
-  copyWeekBtn.onclick = async () => {
-    const text = buildWeeklySummaryText();
-    const ok = await copyTextToClipboard(text);
-    alert(ok ? "이번 주차 기록 복사했어." : "복사 실패했어. 브라우저 권한 확인해줘.");
+  /* 팝오버: 수정/복제 */
+  editBtn.onclick = () => setMode("edit");
+  editCancel.onclick = () => {
+    const item = findBoardItem(popState.day, popState.uid);
+    if (item){
+      editTitle.value = item.label;
+      editNote.value = item.note || "";
+    }
+    setMode("view");
+  };
+  editSave.onclick = saveEdits;
+
+  dupBtn.onclick = () => {
+    dupDay.value = selectedDay;
+    setMode("dup");
+  };
+  dupDo.onclick = () => {
+    const d = dupDay.value;
+    if (!days.includes(d)) return;
+    duplicateItem(d);
+    setMode("view");
   };
 
-  newWeekBtn.onclick = async () => {
+  /* 새로운 주차 */
+  newWeekBtn.onclick = () => {
     if (!confirm("새로운 주차로 넘어갈까? 지금 배치 다 비워져.")) return;
-
-    const text = buildWeeklySummaryText();
-    await copyTextToClipboard(text);
-
     board = emptyBoard();
     selectedDay = "Mon";
     closeNotePop();
     hideAllDeleteButtons();
     saveState();
     renderWeek();
-
-    alert("새로운 주차로 초기화했어. 직전 기록은 클립보드에 복사됐을 수 있어.");
+    alert("새로운 주차로 초기화했어.");
   };
 
   loadState();
-  renderAll();
+  renderWeek();
 })();
 </script>
 
@@ -1249,7 +1458,7 @@ window.addEventListener("resize", () => {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", async () => {
       try {
-        const reg = await navigator.serviceWorker.register("./sw.js?v=12");
+        const reg = await navigator.serviceWorker.register("./sw.js?v=20");
         reg.update();
       } catch (err) {
         console.log("SW register failed:", err);
