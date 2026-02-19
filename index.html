@@ -1062,40 +1062,41 @@
     drag.ghost.style.top = y + "px";
   }
 
-  /* ✅ slot 위가 아니어도 day 카드 위면 그 day slot로 인식 */
   function findDropTarget(x, y){
-    const el = document.elementFromPoint(x, y);
-    if (!el) return null;
+  // 어떤 요일(day) 카드 위에 있는지: 좌표로 직접 판정 (elementFromPoint 의존 제거)
+  const dayEls = Array.from(document.querySelectorAll(".day"));
+  let hitDayEl = null;
 
-    let slot = el.closest(".slot");
-
-    if (!slot){
-      const dayEl = el.closest(".day");
-      if (!dayEl) return null;
-      slot = dayEl.querySelector(".slot");
-      if (!slot) return null;
+  for (const dEl of dayEls){
+    const r = dEl.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom){
+      hitDayEl = dEl;
+      break;
     }
-
-    const dayEl = slot.closest(".day");
-    const day = dayEl?.dataset?.day;
-    if (!day) return null;
-
-    const chips = Array.from(slot.querySelectorAll(".chip"))
-      .filter(c => c.style.visibility !== "hidden");
-
-    let idx = chips.length;
-
-    for (let i = 0; i < chips.length; i++){
-      const r = chips[i].getBoundingClientRect();
-      const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
-      const mid = r.left + r.width / 2;
-
-      if (sameRow && x < mid){ idx = i; break; }
-      if (y < r.top + r.height/2){ idx = i; break; }
-    }
-
-    return { day, slot, idx };
   }
+  if (!hitDayEl) return null;
+
+  const day = hitDayEl.dataset.day;
+  const slot = hitDayEl.querySelector(".slot");
+  if (!day || !slot) return null;
+
+  // slot 안에서 끼워넣을 위치(index) 계산
+  const chips = Array.from(slot.querySelectorAll(".chip"))
+    .filter(c => c.style.visibility !== "hidden");
+
+  let idx = chips.length;
+
+  for (let i = 0; i < chips.length; i++){
+    const r = chips[i].getBoundingClientRect();
+    const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
+    const mid = r.left + r.width / 2;
+
+    if (sameRow && x < mid){ idx = i; break; }
+    if (y < r.top + r.height/2){ idx = i; break; }
+  }
+
+  return { day, slot, idx };
+}
 
   function placePlaceholder(target){
     if (!drag.placeholder) return;
@@ -1410,3 +1411,4 @@
 </script>
 </body>
 </html>
+
