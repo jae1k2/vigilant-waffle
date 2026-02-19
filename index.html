@@ -59,7 +59,12 @@
       color:#111827;
       font-weight:600;
     }
-    .add-row input::placeholder{ color:#9aa3b2; font-weight:500; }
+
+    /* ✅ 안내 문구(placeholder) 강조 낮춤 */
+    .add-row input::placeholder{
+      color:#9aa3b2;
+      font-weight:400;
+    }
 
     #taskInput{ flex:1 1 260px; min-width:170px; }
     #noteInput{ flex:1 1 380px; min-width:220px; font-weight:500; color:#2f3a4a; }
@@ -126,7 +131,7 @@
       display:inline-flex;
       align-items:center;
       gap:8px;
-      padding:0 10px 0 12px;
+      padding:0 12px;
 
       font-weight:500;
       font-size:14px;
@@ -136,9 +141,8 @@
       position:relative;
       width:auto;
       max-width:100%;
-      touch-action:none; /* 드래그 안정 */
+      touch-action:manipulation; /* 스크롤과 싸움 줄이기 */
     }
-    .chip:active{ transform:scale(.99); }
 
     .chip-text{
       white-space:nowrap;
@@ -179,32 +183,6 @@
       background:rgba(238,240,243,.9);
       opacity:.95;
     }
-
-    /* 삭제 버튼(롱프레스 활성) */
-    .chip-del{
-      width:22px;
-      height:22px;
-      border:1px solid #c8cad0;
-      border-radius:50%;
-      display:none;
-      place-items:center;
-      font-size:13px;
-      color:#6c7280;
-      background:#fff;
-      cursor:pointer;
-      line-height:1;
-      padding:0;
-      flex:0 0 auto;
-      transform-origin:center;
-      touch-action:manipulation;
-    }
-    .chip.show-del{ box-shadow:0 0 0 2px rgba(239,68,68,.22); }
-    .chip.show-del .chip-del{ display:grid; }
-
-    @keyframes popIn { from { transform:scale(.6); opacity:0; } to { transform:scale(1); opacity:1; } }
-    @keyframes haloIn { from { box-shadow:0 0 0 0 rgba(239,68,68,.0); } to { box-shadow:0 0 0 2px rgba(239,68,68,.22); } }
-    .chip.del-anim{ animation:haloIn .16s ease-out; }
-    .chip.del-anim .chip-del{ animation:popIn .16s ease-out; }
 
     /* 드래그 중 고스트 */
     .drag-ghost{
@@ -314,6 +292,12 @@
       white-space:nowrap;
     }
 
+    .note-danger{
+      border-color: rgba(239,68,68,.45);
+      color:#b42318;
+      background:#fff;
+    }
+
     .note-body{
       width:100%;
       border-radius:10px;
@@ -350,6 +334,7 @@
       font-size:13px;
       padding:8px 10px;
       outline:none;
+      font-weight:500;
     }
     .edit-wrap textarea{
       min-height:84px;
@@ -437,8 +422,11 @@
       font-size:13px;
       background:rgba(255,255,255,.85);
       color:#111827;
+      font-weight:500;
     }
-    .check-add input::placeholder{ color:#9aa3b2; font-weight:600; }
+    /* ✅ 체크리스트 안내 문구(placeholder) 강조 낮춤 */
+    .check-add input::placeholder{ color:#9aa3b2; font-weight:400; }
+
     .check-add button{
       height:34px;
       border:1px solid #c8cad0;
@@ -472,6 +460,7 @@
       font-size:13px;
       background:rgba(255,255,255,.85);
       color:#111827;
+      font-weight:500;
     }
 
     @media (min-width:700px){
@@ -489,8 +478,8 @@
 <div class="app">
   <div class="panel">
     <div class="add-row">
-      <input id="taskInput" type="text" placeholder="여기에 과제를 입력해" />
-      <input id="noteInput" type="text" placeholder="여기에는 설명을 입력해줘" />
+      <input id="taskInput" type="text" placeholder="과제 이모티콘을 입력해줘" />
+      <input id="noteInput" type="text" placeholder="발동 요인(Trigger)을 입력해줘" />
       <button id="addTaskBtn">+ 과제 추가</button>
     </div>
   </div>
@@ -511,6 +500,7 @@
     <div class="note-actions">
       <button class="note-btn" id="editBtn">수정</button>
       <button class="note-btn" id="dupBtn">복제</button>
+      <button class="note-btn note-danger" id="delBtn">삭제</button>
       <button class="note-btn" id="noteCloseBtn">닫기</button>
     </div>
   </div>
@@ -541,7 +531,7 @@
   <div class="check-wrap">
     <div id="checklistList" class="check-list"></div>
     <div class="check-add">
-      <input id="checkInput" type="text" placeholder="체크리스트 항목 추가" />
+      <input id="checkInput" type="text" placeholder="수행 요소(Action)을 입력해줘" />
       <button id="checkAddBtn" type="button">추가</button>
     </div>
     <div id="checkLimitHint" class="check-limit" style="display:none;"></div>
@@ -551,9 +541,9 @@
 <script>
 (() => {
   const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const STORAGE_KEY = "weekly-board-state-dnd-v1";
+  const STORAGE_KEY = "weekly-board-state-dnd-v2";
 
-  const LONG_PRESS_MS = 520;
+  const HOLD_TO_DRAG_MS = 420;     // ✅ hold & drag
   const CLICK_DELAY = 220;
   const MAX_CHECKLIST = 5;
 
@@ -582,7 +572,6 @@
   let board = emptyBoard();
 
   let clickTimer = null;
-  let activeDeleteChip = null;
 
   // 팝오버 상태
   let popState = { day:null, uid:null };
@@ -592,9 +581,8 @@
   // 드래그 상태
   let drag = {
     active:false,
-    startX:0, startY:0,
     pointerId:null,
-    srcDay:null, srcIndex:-1,
+    srcDay:null,
     uid:null,
     ghost:null,
     placeholder:null,
@@ -631,6 +619,8 @@
   const dupDay = document.getElementById("dupDay");
   const dupDo = document.getElementById("dupDo");
 
+  const delBtn = document.getElementById("delBtn");
+
   const sanitizeLabel = s => (s || "").replace(/\s+/g, " ").trim();
   const normalizeNote = s => (s || "").replace(/\r\n/g, "\n").trim();
   const escapeHtml = s => String(s)
@@ -664,7 +654,7 @@
 
   function saveState(){
     const payload = {
-      version: 1,
+      version: 2,
       selectedDay,
       boardUid,
       lastColorKey,
@@ -704,28 +694,7 @@
     }catch{}
   }
 
-  function vibrateTick(){
-    try{ if (navigator && typeof navigator.vibrate === "function") navigator.vibrate(18); }catch{}
-  }
   function nowSuppressed(){ return Date.now() < suppressClicksUntil; }
-
-  function hideAllDeleteButtons(){
-    document.querySelectorAll(".chip.show-del").forEach(el => {
-      el.classList.remove("show-del");
-      el.classList.remove("del-anim");
-    });
-    activeDeleteChip = null;
-  }
-
-  function enterDeleteMode(el){
-    if (activeDeleteChip && activeDeleteChip !== el){
-      activeDeleteChip.classList.remove("show-del","del-anim");
-    }
-    activeDeleteChip = el;
-    el.classList.add("show-del","del-anim");
-    setTimeout(() => el.classList.remove("del-anim"), 220);
-    vibrateTick();
-  }
 
   function findBoardItem(day, uidValue){
     const arr = board[day] || [];
@@ -865,7 +834,7 @@
 
     notePop.style.left = "-9999px";
     notePop.style.top = "-9999px";
-    notePop.style.display = "flex"; // ✅ gap 살아있게
+    notePop.style.display = "flex"; // gap 살리기
 
     const a = anchorEl.getBoundingClientRect();
     const p = notePop.getBoundingClientRect();
@@ -921,11 +890,8 @@
     setViewMode(item.label, item.note || "");
     renderChecklist(item);
 
-    // edit fields prime
     editTitle.value = item.label;
     editNote.value = item.note || "";
-
-    // dup default: current selectedDay
     dupDay.value = selectedDay;
 
     setMode("view");
@@ -971,20 +937,30 @@
     saveState();
   }
 
+  /* ✅ 복제: 체크리스트 포함(텍스트 유지), 체크 상태는 모두 false로 리셋 / 색상은 랜덤 */
   function duplicateItem(toDay){
     const { day, uid } = popState;
     if (!day || !uid) return;
     const item = findBoardItem(day, uid);
     if (!item) return;
 
+    const srcCk = Array.isArray(item.checklist) ? item.checklist : [];
+    const newChecklist = srcCk.map(c => ({
+      id: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      text: c.text,
+      done: false
+    }));
+
     board[toDay].push({
       uid: "u" + (boardUid++),
       label: item.label,
       note: item.note,
-      colorKey: item.colorKey,
+      colorKey: randomColorKey(),   // ✅ 랜덤 재지정
       done:false,
-      checklist: [] // ✅ 복제는 체크리스트는 새로 시작
+      checklist: newChecklist        // ✅ 포함
     });
+
+    selectedDay = toDay;
     saveState();
     renderWeek();
   }
@@ -1012,78 +988,29 @@
     setMode("view");
   }
 
-  function attachLongPressShowDelete(el){
-    let timer = null;
-    let fired = false;
-    let sx = 0, sy = 0;
-
-    const clear = () => { if (timer){ clearTimeout(timer); timer = null; } };
-
-    el.addEventListener("pointerdown", (e) => {
-      if (e.target.closest(".chip-del")) return;
-      fired = false;
-      sx = e.clientX; sy = e.clientY;
-
-      clear();
-      timer = setTimeout(() => {
-        fired = true;
-        suppressClicksUntil = Date.now() + 450;
-        enterDeleteMode(el);
-      }, LONG_PRESS_MS);
-    });
-
-    el.addEventListener("pointermove", (e) => {
-      if (!timer) return;
-      const dx = Math.abs(e.clientX - sx);
-      const dy = Math.abs(e.clientY - sy);
-      if (dx > 10 || dy > 10) clear();
-    });
-
-    el.addEventListener("pointerup", (e) => {
-      clear();
-      if (fired){
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    });
-
-    el.addEventListener("pointercancel", clear);
-    el.addEventListener("contextmenu", (e) => e.preventDefault());
-  }
-
-  /* ===== 드래그&드롭 (모바일 포함) ===== */
-  function startDrag(chipEl, day, index, uid, e){
-    if (chipEl.classList.contains("show-del")) return;
-    if (e.target.closest(".chip-del")) return;
-
+  /* ===== Hold & Drag ===== */
+  function startDrag(chipEl, day, uid, e){
     drag.active = true;
     drag.pointerId = e.pointerId;
-    drag.startX = e.clientX;
-    drag.startY = e.clientY;
     drag.srcDay = day;
-    drag.srcIndex = index;
     drag.uid = uid;
 
-    // placeholder
     const ph = document.createElement("div");
     ph.className = "drag-placeholder";
     drag.placeholder = ph;
     chipEl.parentNode.insertBefore(ph, chipEl.nextSibling);
 
-    // ghost
     const ghost = chipEl.cloneNode(true);
     ghost.classList.add("drag-ghost");
-    ghost.classList.remove("show-del");
-    ghost.querySelectorAll(".chip-del").forEach(b => b.remove());
     document.body.appendChild(ghost);
     drag.ghost = ghost;
+
     moveGhost(e.clientX, e.clientY);
 
-    // hide original
     chipEl.style.visibility = "hidden";
-
     chipEl.setPointerCapture(e.pointerId);
-    suppressClicksUntil = Date.now() + 400;
+
+    suppressClicksUntil = Date.now() + 450;
   }
 
   function moveGhost(x, y){
@@ -1103,82 +1030,29 @@
     const day = dayEl?.dataset?.day;
     if (!day) return null;
 
-    // index 계산: slot 내의 chip들 가운데 어느 위치에 놓을지
     const chips = Array.from(slot.querySelectorAll(".chip")).filter(c => c.style.visibility !== "hidden");
     let idx = chips.length;
 
     for (let i = 0; i < chips.length; i++){
       const r = chips[i].getBoundingClientRect();
-      const mid = r.left + r.width / 2;
-      // 같은 줄 고려: y가 비슷하면 x 기준, 아니면 아래쪽이면 뒤로
       const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
-      if (sameRow && x < mid){
-        idx = i; break;
-      }
-      // 줄이 위에 있고 내가 더 위면 앞
-      if (y < r.top + r.height/2){
-        idx = i; break;
-      }
+      const mid = r.left + r.width / 2;
+
+      if (sameRow && x < mid){ idx = i; break; }
+      if (y < r.top + r.height/2){ idx = i; break; }
     }
+
     return { day, slot, idx };
   }
 
   function placePlaceholder(target){
     if (!drag.placeholder) return;
     const slot = target.slot;
-    const chips = Array.from(slot.children).filter(n => n !== drag.placeholder);
-    const before = chips[target.idx] || null;
+    const nodes = Array.from(slot.children).filter(n => n !== drag.placeholder);
+    const before = nodes[target.idx] || null;
     slot.insertBefore(drag.placeholder, before);
     drag.overDay = target.day;
     drag.overIndex = target.idx;
-  }
-
-  function finishDrag(){
-    if (!drag.active) return;
-
-    // 원래 chip 복구
-    const hiddenChip = document.querySelector(`.chip[data-uid="${drag.uid}"][data-day="${drag.srcDay}"]`);
-    if (hiddenChip) hiddenChip.style.visibility = "";
-
-    // 데이터 이동
-    const fromDay = drag.srcDay;
-    const toDay = drag.overDay ?? fromDay;
-
-    // placeholder 기준 index
-    let toIndex = drag.overIndex;
-    if (!Number.isFinite(toIndex) || toIndex < 0) toIndex = (board[toDay] || []).length;
-
-    // 실제 item
-    const srcArr = board[fromDay] || [];
-    const srcIdx = srcArr.findIndex(x => x.uid === drag.uid);
-    if (srcIdx === -1){
-      cleanupDrag();
-      renderWeek();
-      return;
-    }
-    const [item] = srcArr.splice(srcIdx, 1);
-
-    const dstArr = board[toDay] || (board[toDay] = []);
-    // 같은 리스트 내 이동이면, 제거로 인해 index 보정
-    if (fromDay === toDay && srcIdx < toIndex) toIndex = Math.max(0, toIndex - 1);
-
-    toIndex = Math.min(dstArr.length, Math.max(0, toIndex));
-    dstArr.splice(toIndex, 0, item);
-
-    // 선택 요일도 이동한 요일로
-    selectedDay = toDay;
-
-    saveState();
-    cleanupDrag();
-    renderWeek();
-  }
-
-  function cancelDrag(){
-    if (!drag.active) return;
-    const hiddenChip = document.querySelector(`.chip[data-uid="${drag.uid}"][data-day="${drag.srcDay}"]`);
-    if (hiddenChip) hiddenChip.style.visibility = "";
-    cleanupDrag();
-    renderWeek();
   }
 
   function cleanupDrag(){
@@ -1194,8 +1068,47 @@
     drag.overDay = null;
     drag.overIndex = -1;
     drag.srcDay = null;
-    drag.srcIndex = -1;
     drag.uid = null;
+  }
+
+  function finishDrag(){
+    if (!drag.active) return;
+
+    const hiddenChip = document.querySelector(`.chip[data-uid="${drag.uid}"][data-day="${drag.srcDay}"]`);
+    if (hiddenChip) hiddenChip.style.visibility = "";
+
+    const fromDay = drag.srcDay;
+    const toDay = drag.overDay ?? fromDay;
+    let toIndex = drag.overIndex;
+    if (!Number.isFinite(toIndex) || toIndex < 0) toIndex = (board[toDay] || []).length;
+
+    const srcArr = board[fromDay] || [];
+    const srcIdx = srcArr.findIndex(x => x.uid === drag.uid);
+    if (srcIdx === -1){
+      cleanupDrag();
+      renderWeek();
+      return;
+    }
+
+    const [item] = srcArr.splice(srcIdx, 1);
+    const dstArr = board[toDay] || (board[toDay] = []);
+
+    if (fromDay === toDay && srcIdx < toIndex) toIndex = Math.max(0, toIndex - 1);
+    toIndex = Math.min(dstArr.length, Math.max(0, toIndex));
+    dstArr.splice(toIndex, 0, item);
+
+    selectedDay = toDay;
+    saveState();
+    cleanupDrag();
+    renderWeek();
+  }
+
+  function cancelDrag(){
+    if (!drag.active) return;
+    const hiddenChip = document.querySelector(`.chip[data-uid="${drag.uid}"][data-day="${drag.srcDay}"]`);
+    if (hiddenChip) hiddenChip.style.visibility = "";
+    cleanupDrag();
+    renderWeek();
   }
 
   function addTask(){
@@ -1247,7 +1160,7 @@
         renderWeek();
       };
 
-      (board[day] || []).forEach((item, idx) => {
+      (board[day] || []).forEach((item) => {
         const ckLen = Array.isArray(item.checklist) ? item.checklist.length : 0;
 
         const chip = document.createElement("div");
@@ -1260,53 +1173,58 @@
         chip.innerHTML = `
           <span class="chip-text" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
           <span class="ck-count">${ckLen}</span>
-          <button type="button" class="chip-del" aria-label="delete">×</button>
         `;
 
-        attachLongPressShowDelete(chip);
+        /* ✅ hold & drag: 길게 누르면 드래그 시작 */
+        let holdTimer = null;
+        let holding = false;
 
-        // 드래그 시작(짧은 이동 threshold)
-        let dragArmed = false;
-        let sx = 0, sy = 0;
+        const clearHold = () => {
+          if (holdTimer){ clearTimeout(holdTimer); holdTimer = null; }
+          holding = false;
+        };
 
         chip.addEventListener("pointerdown", (e) => {
           if (nowSuppressed()) return;
+          if (drag.active) return;
           if (e.button !== undefined && e.button !== 0) return;
-          if (e.target.closest(".chip-del")) return;
-          if (chip.classList.contains("show-del")) return;
 
-          dragArmed = true;
-          sx = e.clientX; sy = e.clientY;
+          holding = true;
+          const startX = e.clientX, startY = e.clientY;
+
+          holdTimer = setTimeout(() => {
+            if (!holding) return;
+            startDrag(chip, day, item.uid, e);
+          }, HOLD_TO_DRAG_MS);
+
+          const moveHandler = (ev) => {
+            if (!holding || !holdTimer) return;
+            const dx = Math.abs(ev.clientX - startX);
+            const dy = Math.abs(ev.clientY - startY);
+            if (dx + dy > 12){
+              // 스크롤/실수 이동이면 hold 취소
+              clearHold();
+            }
+          };
+
+          const upHandler = () => { clearHold(); cleanup(); };
+          const cancelHandler = () => { clearHold(); cleanup(); };
+
+          const cleanup = () => {
+            window.removeEventListener("pointermove", moveHandler);
+            window.removeEventListener("pointerup", upHandler);
+            window.removeEventListener("pointercancel", cancelHandler);
+          };
+
+          window.addEventListener("pointermove", moveHandler, { passive:true });
+          window.addEventListener("pointerup", upHandler, { passive:true });
+          window.addEventListener("pointercancel", cancelHandler, { passive:true });
         });
 
-        chip.addEventListener("pointermove", (e) => {
-          if (!dragArmed) return;
-          if (drag.active) return;
-
-          const dx = Math.abs(e.clientX - sx);
-          const dy = Math.abs(e.clientY - sy);
-          if (dx + dy > 10){
-            dragArmed = false;
-            startDrag(chip, day, idx, item.uid, e);
-          }
-        });
-
-        chip.addEventListener("pointerup", (e) => {
-          if (drag.active) return;
-          dragArmed = false;
-        });
-
-        chip.addEventListener("pointercancel", () => {
-          if (drag.active) cancelDrag();
-          dragArmed = false;
-        });
-
-        // 클릭: 팝오버 / 더블클릭: 완료
+        /* 클릭: 팝오버 / 더블클릭: 완료 (드래그 중이면 무시) */
         chip.addEventListener("click", (e) => {
           if (drag.active) return;
           if (nowSuppressed()) return;
-          if (e.target.closest(".chip-del")) return;
-          if (chip.classList.contains("show-del")) return;
 
           e.stopPropagation();
           selectedDay = day;
@@ -1321,23 +1239,13 @@
         chip.addEventListener("dblclick", (e) => {
           if (drag.active) return;
           if (nowSuppressed()) return;
-          if (e.target.closest(".chip-del")) return;
           e.preventDefault();
           e.stopPropagation();
           clearTimeout(clickTimer);
-          if (chip.classList.contains("show-del")) return;
 
           if (toggleDone(day, item.uid)){
-            vibrateTick();
             renderWeek();
           }
-        });
-
-        chip.querySelector(".chip-del").addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          removeItem(day, item.uid);
-          renderWeek();
         });
 
         slot.appendChild(chip);
@@ -1355,7 +1263,6 @@
     if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
 
     moveGhost(e.clientX, e.clientY);
-
     const t = findDropTarget(e.clientX, e.clientY);
     if (t) placePlaceholder(t);
   }, { passive:true });
@@ -1371,14 +1278,6 @@
     if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
     cancelDrag();
   });
-
-  /* 삭제모드 해제 */
-  document.addEventListener("pointerdown", (e) => {
-    if (!activeDeleteChip) return;
-    if (e.target.closest(".chip-del")) return;
-    const insideActive = e.target.closest(".chip") === activeDeleteChip;
-    if (!insideActive) hideAllDeleteButtons();
-  }, { capture:true });
 
   /* 팝오버 밖 클릭 닫기 */
   document.addEventListener("click", (e) => {
@@ -1414,7 +1313,7 @@
     }
   });
 
-  /* 팝오버: 수정/복제 */
+  /* 팝오버: 수정/복제/삭제 */
   editBtn.onclick = () => setMode("edit");
   editCancel.onclick = () => {
     const item = findBoardItem(popState.day, popState.uid);
@@ -1437,13 +1336,21 @@
     setMode("view");
   };
 
+  delBtn.onclick = () => {
+    const { day, uid } = popState;
+    if (!day || !uid) return;
+    if (!confirm("이 탭 지울까?")) return;
+    removeItem(day, uid);
+    closeNotePop();
+    renderWeek();
+  };
+
   /* 새로운 주차 */
   newWeekBtn.onclick = () => {
     if (!confirm("새로운 주차로 넘어갈까? 지금 배치 다 비워져.")) return;
     board = emptyBoard();
     selectedDay = "Mon";
     closeNotePop();
-    hideAllDeleteButtons();
     saveState();
     renderWeek();
     alert("새로운 주차로 초기화했어.");
@@ -1458,7 +1365,7 @@
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", async () => {
       try {
-        const reg = await navigator.serviceWorker.register("./sw.js?v=20");
+        const reg = await navigator.serviceWorker.register("./sw.js?v=21");
         reg.update();
       } catch (err) {
         console.log("SW register failed:", err);
