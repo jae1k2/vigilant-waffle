@@ -1020,30 +1020,41 @@
   }
 
   function findDropTarget(x, y){
-    const el = document.elementFromPoint(x, y);
-    if (!el) return null;
+  const el = document.elementFromPoint(x, y);
+  if (!el) return null;
 
-    const slot = el.closest(".slot");
+  // 1) 원래처럼 slot 위면 그 slot 사용
+  let slot = el.closest(".slot");
+
+  // 2) slot이 아니더라도 day 카드 위면 그 day의 slot을 잡아준다
+  if (!slot){
+    const dayEl = el.closest(".day");
+    if (!dayEl) return null;
+    slot = dayEl.querySelector(".slot");
     if (!slot) return null;
-
-    const dayEl = slot.closest(".day");
-    const day = dayEl?.dataset?.day;
-    if (!day) return null;
-
-    const chips = Array.from(slot.querySelectorAll(".chip")).filter(c => c.style.visibility !== "hidden");
-    let idx = chips.length;
-
-    for (let i = 0; i < chips.length; i++){
-      const r = chips[i].getBoundingClientRect();
-      const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
-      const mid = r.left + r.width / 2;
-
-      if (sameRow && x < mid){ idx = i; break; }
-      if (y < r.top + r.height/2){ idx = i; break; }
-    }
-
-    return { day, slot, idx };
   }
+
+  const dayEl = slot.closest(".day");
+  const day = dayEl?.dataset?.day;
+  if (!day) return null;
+
+  // index 계산 (같은 slot 안에서 어디에 끼울지)
+  const chips = Array.from(slot.querySelectorAll(".chip"))
+    .filter(c => c.style.visibility !== "hidden");
+
+  let idx = chips.length;
+
+  for (let i = 0; i < chips.length; i++){
+    const r = chips[i].getBoundingClientRect();
+    const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
+    const mid = r.left + r.width / 2;
+
+    if (sameRow && x < mid){ idx = i; break; }
+    if (y < r.top + r.height/2){ idx = i; break; }
+  }
+
+  return { day, slot, idx };
+}
 
   function placePlaceholder(target){
     if (!drag.placeholder) return;
@@ -1375,3 +1386,4 @@
 </script>
 </body>
 </html>
+
