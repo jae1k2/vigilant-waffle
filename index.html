@@ -20,7 +20,6 @@
       --done-text:#6f7782;
 
       --radius:14px;
-      --gap:10px;
       --ui-gap:10px;
 
       --shadow: 0 14px 34px rgba(16,24,40,.18);
@@ -59,8 +58,7 @@
       color:#111827;
       font-weight:600;
     }
-
-    /* ✅ 안내 문구(placeholder) 강조 낮춤 */
+    /* ✅ placeholder 강조 낮춤 */
     .add-row input::placeholder{
       color:#9aa3b2;
       font-weight:400;
@@ -141,7 +139,7 @@
       position:relative;
       width:auto;
       max-width:100%;
-      touch-action:manipulation; /* 스크롤과 싸움 줄이기 */
+      touch-action:manipulation;
     }
 
     .chip-text{
@@ -291,7 +289,6 @@
       cursor:pointer;
       white-space:nowrap;
     }
-
     .note-danger{
       border-color: rgba(239,68,68,.45);
       color:#b42318;
@@ -341,6 +338,13 @@
       resize:vertical;
       line-height:1.5;
     }
+    /* ✅ 수정모드 placeholder도 강조 낮춤 */
+    .edit-wrap input::placeholder,
+    .edit-wrap textarea::placeholder{
+      color:#9aa3b2;
+      font-weight:400;
+    }
+
     .edit-actions{
       display:flex;
       gap:8px;
@@ -424,8 +428,11 @@
       color:#111827;
       font-weight:500;
     }
-    /* ✅ 체크리스트 안내 문구(placeholder) 강조 낮춤 */
-    .check-add input::placeholder{ color:#9aa3b2; font-weight:400; }
+    /* ✅ 안내 문구 강조 낮춤 */
+    .check-add input::placeholder{
+      color:#9aa3b2;
+      font-weight:400;
+    }
 
     .check-add button{
       height:34px;
@@ -541,9 +548,8 @@
 <script>
 (() => {
   const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const STORAGE_KEY = "weekly-board-state-dnd-v2";
-
-  const HOLD_TO_DRAG_MS = 420;     // ✅ hold & drag
+  const STORAGE_KEY = "weekly-board-state-dnd-v2";  // 기존 데이터 유지
+  const HOLD_TO_DRAG_MS = 420;                      // 길게 누르기 → 드래그 발동 시간
   const CLICK_DELAY = 220;
   const MAX_CHECKLIST = 5;
 
@@ -568,7 +574,6 @@
   let selectedDay = "Mon";
   let boardUid = 1;
   let lastColorKey = null;
-
   let board = emptyBoard();
 
   let clickTimer = null;
@@ -654,7 +659,7 @@
 
   function saveState(){
     const payload = {
-      version: 2,
+      version: 3,
       selectedDay,
       boardUid,
       lastColorKey,
@@ -834,7 +839,7 @@
 
     notePop.style.left = "-9999px";
     notePop.style.top = "-9999px";
-    notePop.style.display = "flex"; // gap 살리기
+    notePop.style.display = "flex";
 
     const a = anchorEl.getBoundingClientRect();
     const p = notePop.getBoundingClientRect();
@@ -937,7 +942,7 @@
     saveState();
   }
 
-  /* ✅ 복제: 체크리스트 포함(텍스트 유지), 체크 상태는 모두 false로 리셋 / 색상은 랜덤 */
+  /* ✅ 복제: 체크리스트 포함(텍스트 유지), 체크 상태는 전부 false / 색상은 랜덤 */
   function duplicateItem(toDay){
     const { day, uid } = popState;
     if (!day || !uid) return;
@@ -955,9 +960,9 @@
       uid: "u" + (boardUid++),
       label: item.label,
       note: item.note,
-      colorKey: randomColorKey(),   // ✅ 랜덤 재지정
+      colorKey: randomColorKey(),
       done:false,
-      checklist: newChecklist        // ✅ 포함
+      checklist: newChecklist
     });
 
     selectedDay = toDay;
@@ -988,12 +993,49 @@
     setMode("view");
   }
 
-  /* ===== Hold & Drag ===== */
+  /* ===== 드래그: window 리스너 방식(PC/모바일 안정) ===== */
+  function onDragMove(e){
+    if (!drag.active) return;
+    if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
+
+    moveGhost(e.clientX, e.clientY);
+    const t = findDropTarget(e.clientX, e.clientY);
+    if (t) placePlaceholder(t);
+  }
+
+  function onDragUp(e){
+    if (!drag.active) return;
+    if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
+    finishDrag();
+  }
+
+  function onDragCancel(e){
+    if (!drag.active) return;
+    if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
+    cancelDrag();
+  }
+
+  function attachDragListeners(){
+    window.addEventListener("pointermove", onDragMove, { passive:true });
+    window.addEventListener("pointerup", onDragUp, { passive:true });
+    window.addEventListener("pointercancel", onDragCancel, { passive:true });
+  }
+
+  function detachDragListeners(){
+    window.removeEventListener("pointermove", onDragMove);
+    window.removeEventListener("pointerup", onDragUp);
+    window.removeEventListener("pointercancel", onDragCancel);
+  }
+
   function startDrag(chipEl, day, uid, e){
     drag.active = true;
     drag.pointerId = e.pointerId;
     drag.srcDay = day;
     drag.uid = uid;
+
+    // 기본값: 같은 요일 내 이동도 안정적으로
+    drag.overDay = day;
+    drag.overIndex = (board[day] || []).findIndex(x => x.uid === uid);
 
     const ph = document.createElement("div");
     ph.className = "drag-placeholder";
@@ -1010,6 +1052,7 @@
     chipEl.style.visibility = "hidden";
     chipEl.setPointerCapture(e.pointerId);
 
+    attachDragListeners();
     suppressClicksUntil = Date.now() + 450;
   }
 
@@ -1019,42 +1062,40 @@
     drag.ghost.style.top = y + "px";
   }
 
+  /* ✅ slot 위가 아니어도 day 카드 위면 그 day slot로 인식 */
   function findDropTarget(x, y){
-  const el = document.elementFromPoint(x, y);
-  if (!el) return null;
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
 
-  // 1) 원래처럼 slot 위면 그 slot 사용
-  let slot = el.closest(".slot");
+    let slot = el.closest(".slot");
 
-  // 2) slot이 아니더라도 day 카드 위면 그 day의 slot을 잡아준다
-  if (!slot){
-    const dayEl = el.closest(".day");
-    if (!dayEl) return null;
-    slot = dayEl.querySelector(".slot");
-    if (!slot) return null;
+    if (!slot){
+      const dayEl = el.closest(".day");
+      if (!dayEl) return null;
+      slot = dayEl.querySelector(".slot");
+      if (!slot) return null;
+    }
+
+    const dayEl = slot.closest(".day");
+    const day = dayEl?.dataset?.day;
+    if (!day) return null;
+
+    const chips = Array.from(slot.querySelectorAll(".chip"))
+      .filter(c => c.style.visibility !== "hidden");
+
+    let idx = chips.length;
+
+    for (let i = 0; i < chips.length; i++){
+      const r = chips[i].getBoundingClientRect();
+      const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
+      const mid = r.left + r.width / 2;
+
+      if (sameRow && x < mid){ idx = i; break; }
+      if (y < r.top + r.height/2){ idx = i; break; }
+    }
+
+    return { day, slot, idx };
   }
-
-  const dayEl = slot.closest(".day");
-  const day = dayEl?.dataset?.day;
-  if (!day) return null;
-
-  // index 계산 (같은 slot 안에서 어디에 끼울지)
-  const chips = Array.from(slot.querySelectorAll(".chip"))
-    .filter(c => c.style.visibility !== "hidden");
-
-  let idx = chips.length;
-
-  for (let i = 0; i < chips.length; i++){
-    const r = chips[i].getBoundingClientRect();
-    const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
-    const mid = r.left + r.width / 2;
-
-    if (sameRow && x < mid){ idx = i; break; }
-    if (y < r.top + r.height/2){ idx = i; break; }
-  }
-
-  return { day, slot, idx };
-}
 
   function placePlaceholder(target){
     if (!drag.placeholder) return;
@@ -1067,6 +1108,8 @@
   }
 
   function cleanupDrag(){
+    detachDragListeners();
+
     drag.active = false;
     drag.pointerId = null;
 
@@ -1091,6 +1134,7 @@
     const fromDay = drag.srcDay;
     const toDay = drag.overDay ?? fromDay;
     let toIndex = drag.overIndex;
+
     if (!Number.isFinite(toIndex) || toIndex < 0) toIndex = (board[toDay] || []).length;
 
     const srcArr = board[fromDay] || [];
@@ -1186,7 +1230,7 @@
           <span class="ck-count">${ckLen}</span>
         `;
 
-        /* ✅ hold & drag: 길게 누르면 드래그 시작 */
+        /* ✅ hold → drag */
         let holdTimer = null;
         let holding = false;
 
@@ -1205,6 +1249,8 @@
 
           holdTimer = setTimeout(() => {
             if (!holding) return;
+            clearTimeout(holdTimer);
+            holdTimer = null;
             startDrag(chip, day, item.uid, e);
           }, HOLD_TO_DRAG_MS);
 
@@ -1232,7 +1278,7 @@
           window.addEventListener("pointercancel", cancelHandler, { passive:true });
         });
 
-        /* 클릭: 팝오버 / 더블클릭: 완료 (드래그 중이면 무시) */
+        /* 클릭: 팝오버 / 더블클릭: 완료 */
         chip.addEventListener("click", (e) => {
           if (drag.active) return;
           if (nowSuppressed()) return;
@@ -1267,28 +1313,6 @@
       weekEl.appendChild(col);
     });
   }
-
-  /* 전역 드래그 핸들 */
-  document.addEventListener("pointermove", (e) => {
-    if (!drag.active) return;
-    if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
-
-    moveGhost(e.clientX, e.clientY);
-    const t = findDropTarget(e.clientX, e.clientY);
-    if (t) placePlaceholder(t);
-  }, { passive:true });
-
-  document.addEventListener("pointerup", (e) => {
-    if (!drag.active) return;
-    if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
-    finishDrag();
-  });
-
-  document.addEventListener("pointercancel", (e) => {
-    if (!drag.active) return;
-    if (drag.pointerId !== null && e.pointerId !== drag.pointerId) return;
-    cancelDrag();
-  });
 
   /* 팝오버 밖 클릭 닫기 */
   document.addEventListener("click", (e) => {
@@ -1376,7 +1400,7 @@
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", async () => {
       try {
-        const reg = await navigator.serviceWorker.register("./sw.js?v=21");
+        const reg = await navigator.serviceWorker.register("./sw.js?v=22");
         reg.update();
       } catch (err) {
         console.log("SW register failed:", err);
@@ -1386,4 +1410,3 @@
 </script>
 </body>
 </html>
-
