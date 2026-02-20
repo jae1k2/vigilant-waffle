@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>주간 보드</title>
 
+  <!-- ✅ PWA -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#ffffff">
+
+  <!-- ✅ 아이콘 (브라우저 탭/홈화면 보조) -->
+  <link rel="icon" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+
   <style>
     :root{
       --bg:#ffffff;
@@ -37,7 +45,6 @@
       margin-bottom:12px;
     }
 
-    /* 상단 입력 */
     .add-row{
       display:flex;
       gap:8px;
@@ -54,12 +61,10 @@
       color:#111827;
       font-weight:600;
     }
-    /* placeholder 강조 낮춤 */
     .add-row input::placeholder{
       color:#9aa3b2;
       font-weight:400;
     }
-
     #taskInput{ flex:1 1 260px; min-width:170px; }
     #noteInput{ flex:1 1 380px; min-width:220px; font-weight:500; color:#2f3a4a; }
 
@@ -75,7 +80,6 @@
       white-space:nowrap;
     }
 
-    /* 주간 보드 */
     .week{
       display:grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
@@ -117,7 +121,6 @@
       cursor:pointer;
     }
 
-    /* 칩 */
     .chip{
       height:42px;
       border:1px solid #b8bbc2;
@@ -135,8 +138,6 @@
       position:relative;
       width:auto;
       max-width:100%;
-
-      /* 드래그 발동 전엔 스크롤 가능하게 두고, 발동 후엔 JS에서 preventDefault */
       touch-action: pan-y;
     }
 
@@ -162,7 +163,6 @@
     }
     .chip.has-ck .ck-count{ display:inline-flex; }
 
-    /* 완료 스타일 */
     .chip.done{
       background:var(--done-bg) !important;
       border-color:var(--done-border) !important;
@@ -180,7 +180,21 @@
       opacity:.95;
     }
 
-    /* 드래그 */
+    /* ✅ 이동 모드(armed) 표시 */
+    .chip.armed{
+      outline:2px solid rgba(96,165,250,.75);
+      outline-offset:2px;
+      box-shadow: 0 8px 20px rgba(96,165,250,.18);
+    }
+    @keyframes nudge {
+      0%{ transform:translateY(0); }
+      50%{ transform:translateY(-1px); }
+      100%{ transform:translateY(0); }
+    }
+    body.reorder-mode .chip.armed{
+      animation:nudge 0.9s ease-in-out infinite;
+    }
+
     .drag-ghost{
       position:fixed;
       z-index:2000;
@@ -203,7 +217,6 @@
       touch-action:none;
     }
 
-    /* 하단 버튼 */
     .toolbar{
       display:flex;
       gap:8px;
@@ -221,7 +234,6 @@
       cursor:pointer;
     }
 
-    /* 모달 */
     .modal-backdrop{
       position:fixed;
       inset:0;
@@ -235,7 +247,6 @@
     }
     .modal-backdrop.show{ opacity:1; }
 
-    /* 팝오버 */
     .note-pop{
       position:fixed;
       z-index:60;
@@ -348,7 +359,6 @@
       justify-content:flex-end;
     }
 
-    /* 체크리스트 */
     .check-wrap{
       width:100%;
       display:flex;
@@ -510,8 +520,7 @@
 (() => {
   const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   const STORAGE_KEY = "weekly-board-state-dnd-v2";
-  const HOLD_TO_DRAG_MS = 420;
-  const HOLD_MOVE_CANCEL_PX = 10;
+  const HOLD_TO_ARM_MS = 420;          // ✅ 길게 눌러 이동 모드 ON
   const CLICK_DELAY = 220;
   const MAX_CHECKLIST = 5;
 
@@ -539,12 +548,15 @@
   let suppressClicksUntil = 0;
   let clickTimer = null;
 
+  // ✅ 이동 모드 상태
+  let armed = { day:null, uid:null };
+
   // 팝오버
   let popState = { day:null, uid:null };
   let popCloseTimer = null;
   let backdropCloseTimer = null;
 
-  // 드래그(새 설계)
+  // 드래그
   const drag = {
     active:false,
     pointerId:null,
@@ -556,8 +568,6 @@
     moveHandler:null,
     upHandler:null,
     cancelHandler:null,
-    lastX:0,
-    lastY:0
   };
 
   const weekEl = document.getElementById("week");
@@ -623,14 +633,13 @@
   function safeLocalStorageSet(key, value){ try{ localStorage.setItem(key, value); }catch{} }
 
   function saveState(){
-    const payload = { version: 4, selectedDay, boardUid, lastColorKey, board };
+    const payload = { version: 5, selectedDay, boardUid, lastColorKey, board };
     safeLocalStorageSet(STORAGE_KEY, JSON.stringify(payload));
   }
 
   function normalizeLoadedBoard(rawBoard){
     const normalized = emptyBoard();
     if (!rawBoard || typeof rawBoard !== "object") return normalized;
-
     for (const day of days){
       const arr = Array.isArray(rawBoard[day]) ? rawBoard[day] : [];
       normalized[day] = arr.map(item => ({
@@ -673,7 +682,6 @@
   function toggleDone(day, uidValue){
     const item = findBoardItem(day, uidValue);
     if (!item) return false;
-
     if (!item.done){
       if (hasIncompleteChecklist(item)){
         alert("아직 체크리스트 남아있어. 다 체크하고 완료해줘.");
@@ -686,6 +694,21 @@
     item.done = false;
     saveState();
     return true;
+  }
+
+  // ✅ 이동 모드 제어
+  function armChip(day, uid){
+    armed = { day, uid };
+    document.body.classList.add("reorder-mode");
+    renderWeek();
+  }
+  function disarm(){
+    armed = { day:null, uid:null };
+    document.body.classList.remove("reorder-mode");
+    renderWeek();
+  }
+  function isArmed(day, uid){
+    return armed.day === day && armed.uid === uid;
   }
 
   /* ===== 팝오버 ===== */
@@ -713,7 +736,6 @@
   function refreshChecklistControls(item){
     const ck = Array.isArray(item.checklist) ? item.checklist : [];
     const remain = MAX_CHECKLIST - ck.length;
-
     if (remain <= 0){
       checkAddBtn.disabled = true;
       checkInput.disabled = true;
@@ -731,7 +753,6 @@
     checklistList.innerHTML = "";
     const list = Array.isArray(item.checklist) ? item.checklist : [];
     const visible = list.slice(0, MAX_CHECKLIST);
-
     checklistList.style.display = (visible.length === 0) ? "none" : "flex";
 
     visible.forEach((ck, idx) => {
@@ -795,7 +816,6 @@
   function positionPopNearAnchor(anchorEl){
     const pad = 8;
     const margin = 12;
-
     notePop.style.left = "-9999px";
     notePop.style.top = "-9999px";
     notePop.style.display = "flex";
@@ -951,63 +971,46 @@
     setMode("view");
   }
 
-  /* ===== 드래그(완전 재설계) ===== */
+  /* ===== 드래그(이미 안정 버전) ===== */
   function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-
-  // 포인터 좌표로 "가장 가까운 요일 카드"를 찾는다 (카드 사이 간격에서도 안정)
   function nearestDayEl(x, y){
     const dayEls = Array.from(document.querySelectorAll(".day"));
-    let best = null;
-    let bestDist = Infinity;
-
+    let best = null, bestDist = Infinity;
     for (const el of dayEls){
       const r = el.getBoundingClientRect();
       const cx = clamp(x, r.left, r.right);
       const cy = clamp(y, r.top, r.bottom);
-      const dx = x - cx;
-      const dy = y - cy;
+      const dx = x - cx, dy = y - cy;
       const d2 = dx*dx + dy*dy;
-      if (d2 < bestDist){
-        bestDist = d2;
-        best = el;
-      }
+      if (d2 < bestDist){ bestDist = d2; best = el; }
     }
-
-    // 너무 멀리 떨어져 있으면(보드 밖) 무시
     if (!best) return null;
     if (bestDist > 160*160) return null;
     return best;
   }
-
   function chipsInSlot(slot){
     return Array.from(slot.querySelectorAll(".chip"))
       .filter(ch => ch.dataset.dragging !== "1");
   }
-
   function computeInsertIndex(slot, x, y){
     const chips = chipsInSlot(slot);
     if (!chips.length) return 0;
-
     let idx = chips.length;
-
-    for (let i = 0; i < chips.length; i++){
+    for (let i=0;i<chips.length;i++){
       const r = chips[i].getBoundingClientRect();
       const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
-      const mid = r.left + r.width / 2;
-
-      if (sameRow && x < mid){ idx = i; break; }
-      if (y < r.top + r.height/2){ idx = i; break; }
+      const mid = r.left + r.width/2;
+      if (sameRow && x < mid){ idx=i; break; }
+      if (y < r.top + r.height/2){ idx=i; break; }
     }
     return idx;
   }
-
   function placePlaceholder(slot, idx){
     if (!drag.placeholder) return;
     const chips = chipsInSlot(slot);
     const before = chips[idx] || null;
     slot.insertBefore(drag.placeholder, before);
   }
-
   function placeholderIndex(slot){
     if (!drag.placeholder) return 0;
     let idx = 0;
@@ -1021,9 +1024,7 @@
   }
 
   function beginDrag(el, day, uid, e){
-    // 팝오버 열려있으면 닫아 버리고 드래그에 집중
     closeNotePop();
-
     drag.active = true;
     drag.pointerId = e.pointerId;
     drag.el = el;
@@ -1032,50 +1033,36 @@
 
     document.body.classList.add("dragging");
 
-    // placeholder를 "원래 자리"에 끼워 넣기
     const ph = document.createElement("div");
     ph.className = "drag-placeholder";
     drag.placeholder = ph;
     el.parentNode.insertBefore(ph, el);
 
-    // ghost 생성 (눈에 보이는 이동체)
     const ghost = el.cloneNode(true);
     ghost.classList.add("drag-ghost");
     document.body.appendChild(ghost);
     drag.ghost = ghost;
 
-    drag.lastX = e.clientX;
-    drag.lastY = e.clientY;
     ghost.style.left = e.clientX + "px";
     ghost.style.top = e.clientY + "px";
 
-    // 드래그 원본 엘리먼트는 레이아웃에서 빠지게(고정 + 화면 밖)
     el.dataset.dragging = "1";
     el.style.position = "fixed";
     el.style.left = "-9999px";
     el.style.top = "-9999px";
     el.style.pointerEvents = "none";
 
-    // 포인터 캡처
     try{ el.setPointerCapture(e.pointerId); }catch{}
 
-    // 캡처된 el에 직접 move/up/cancel 붙이기 (window/document 의존 제거)
     drag.moveHandler = (ev) => {
       if (!drag.active) return;
       if (ev.pointerId !== drag.pointerId) return;
       ev.preventDefault();
-
-      drag.lastX = ev.clientX;
-      drag.lastY = ev.clientY;
-
-      if (drag.ghost){
-        drag.ghost.style.left = ev.clientX + "px";
-        drag.ghost.style.top = ev.clientY + "px";
-      }
+      drag.ghost.style.left = ev.clientX + "px";
+      drag.ghost.style.top = ev.clientY + "px";
 
       const dayEl = nearestDayEl(ev.clientX, ev.clientY);
       if (!dayEl) return;
-
       const slot = dayEl.querySelector(".slot");
       if (!slot) return;
 
@@ -1136,7 +1123,6 @@
   }
 
   function finishDrag(x, y){
-    // 마지막 좌표에서도 한 번 더 placeholder를 확정 배치
     const dayEl = nearestDayEl(x, y);
     if (dayEl){
       const slot = dayEl.querySelector(".slot");
@@ -1150,6 +1136,7 @@
     if (!ph || !ph.parentElement){
       cleanupDrag();
       renderWeek();
+      disarm(); // ✅ 이동 완료 후 해제
       return;
     }
 
@@ -1159,16 +1146,16 @@
     const fromDay = drag.srcDay;
     const uid = drag.uid;
 
-    // 데이터 이동
     const srcArr = board[fromDay] || [];
     const srcIdx = srcArr.findIndex(it => it.uid === uid);
     if (srcIdx === -1){
       cleanupDrag();
       renderWeek();
+      disarm();
       return;
     }
-    const [item] = srcArr.splice(srcIdx, 1);
 
+    const [item] = srcArr.splice(srcIdx, 1);
     const dstArr = board[toDay] || (board[toDay] = []);
     const idx = placeholderIndex(toSlot);
     const safeIdx = Math.min(dstArr.length, Math.max(0, idx));
@@ -1179,11 +1166,13 @@
 
     cleanupDrag();
     renderWeek();
+    disarm(); // ✅ 이동 완료 후 해제
   }
 
   function cancelDrag(){
     cleanupDrag();
     renderWeek();
+    disarm();
   }
 
   /* ===== 렌더 / 입력 ===== */
@@ -1241,9 +1230,10 @@
 
         const chip = document.createElement("div");
         chip.className = "chip" + (item.done ? " done" : "") + (ckLen ? " has-ck" : "");
+        if (isArmed(day, item.uid)) chip.classList.add("armed");
+
         chip.dataset.uid = item.uid;
         chip.dataset.day = day;
-
         if (!item.done) chip.style.cssText = pillStyle(item.colorKey);
 
         chip.innerHTML = `
@@ -1251,10 +1241,9 @@
           <span class="ck-count">${ckLen}</span>
         `;
 
-        // hold → drag
+        // ✅ 길게 누르면 "이동 모드 ON" (즉시 드래그 시작하지 않음)
         let holdTimer = null;
         let holding = false;
-        let startX = 0, startY = 0;
 
         const clearHold = () => {
           if (holdTimer){ clearTimeout(holdTimer); holdTimer = null; }
@@ -1266,47 +1255,39 @@
           if (nowSuppressed()) return;
           if (e.button !== undefined && e.button !== 0) return;
 
-          holding = true;
-          startX = e.clientX;
-          startY = e.clientY;
+          // ✅ 이미 armed면: 바로 드래그 시작
+          if (isArmed(day, item.uid)){
+            beginDrag(chip, day, item.uid, e);
+            return;
+          }
 
+          holding = true;
           holdTimer = setTimeout(() => {
             if (!holding) return;
-            clearTimeout(holdTimer);
-            holdTimer = null;
-            beginDrag(chip, day, item.uid, e);
-          }, HOLD_TO_DRAG_MS);
-
-          const moveCancel = (ev) => {
-            if (!holding || !holdTimer) return;
-            const dx = Math.abs(ev.clientX - startX);
-            const dy = Math.abs(ev.clientY - startY);
-            if (dx > HOLD_MOVE_CANCEL_PX || dy > HOLD_MOVE_CANCEL_PX){
-              // 스크롤/이동 의도면 hold 취소
-              clearHold();
-              cleanup();
-            }
-          };
+            clearHold();
+            armChip(day, item.uid); // ✅ 이동 모드로만 전환
+            suppressClicksUntil = Date.now() + 250;
+          }, HOLD_TO_ARM_MS);
 
           const up = () => { clearHold(); cleanup(); };
           const cancel = () => { clearHold(); cleanup(); };
 
           const cleanup = () => {
-            window.removeEventListener("pointermove", moveCancel);
             window.removeEventListener("pointerup", up);
             window.removeEventListener("pointercancel", cancel);
           };
 
-          window.addEventListener("pointermove", moveCancel, { passive:true });
           window.addEventListener("pointerup", up, { passive:true });
           window.addEventListener("pointercancel", cancel, { passive:true });
         });
 
-        // 클릭: 팝오버 / 더블클릭: 완료
+        // 클릭: 팝오버 (armed 상태면 클릭으로 팝오버 열지 않게)
         chip.addEventListener("click", (e) => {
           if (drag.active) return;
           if (nowSuppressed()) return;
           e.stopPropagation();
+
+          if (isArmed(day, item.uid)) return; // ✅ 이동 모드일 땐 클릭 무시(드래그로 이동)
 
           selectedDay = day;
           saveState();
@@ -1317,9 +1298,11 @@
           }, CLICK_DELAY);
         });
 
+        // 더블클릭: 완료 (armed 상태면 완료도 막아줌)
         chip.addEventListener("dblclick", (e) => {
           if (drag.active) return;
           if (nowSuppressed()) return;
+          if (isArmed(day, item.uid)) return;
           e.preventDefault();
           e.stopPropagation();
           clearTimeout(clickTimer);
@@ -1338,7 +1321,15 @@
     }
   }
 
-  /* 팝오버 바깥 클릭 닫기 */
+  // ✅ 이동 모드 해제: 다른 곳 탭하면 풀기
+  document.addEventListener("pointerdown", (e) => {
+    if (!armed.uid) return;
+    const onArmedChip = e.target.closest?.(".chip.armed");
+    if (onArmedChip) return;
+    disarm();
+  }, { passive:true });
+
+  // 팝오버 바깥 클릭 닫기
   document.addEventListener("click", (e) => {
     const inPop = notePop.contains(e.target);
     const onChip = e.target.closest && e.target.closest(".chip");
@@ -1347,7 +1338,7 @@
     }
   });
 
-  /* 모바일 키보드 리사이즈: 가로폭 변화 때만 닫기 */
+  // 모바일 키보드 리사이즈: 가로폭 변화 때만 닫기
   let lastW = window.innerWidth;
   window.addEventListener("resize", () => {
     const w = window.innerWidth;
@@ -1407,6 +1398,7 @@
     board = emptyBoard();
     selectedDay = "Mon";
     closeNotePop();
+    disarm();
     saveState();
     renderWeek();
     alert("새로운 주차로 초기화했어.");
@@ -1415,6 +1407,20 @@
   loadState();
   renderWeek();
 })();
+</script>
+
+<script>
+  // ✅ SW 등록 (파일이 실제로 있어야 함)
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", async () => {
+      try {
+        const reg = await navigator.serviceWorker.register("./sw.js?v=31");
+        reg.update();
+      } catch (err) {
+        console.log("SW register failed:", err);
+      }
+    });
+  }
 </script>
 </body>
 </html>
