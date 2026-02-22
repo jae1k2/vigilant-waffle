@@ -41,6 +41,7 @@
       margin-bottom:12px;
     }
 
+    /* Island 1: 입력 */
     .add-row{
       display:flex;
       gap:8px;
@@ -63,7 +64,6 @@
     }
     #taskInput{ flex:1 1 260px; min-width:170px; }
     #noteInput{ flex:1 1 380px; min-width:220px; font-weight:500; color:#2f3a4a; }
-
     .add-row button{
       border:1px solid #c8cad0;
       background:#fff;
@@ -76,6 +76,7 @@
       white-space:nowrap;
     }
 
+    /* Island 2: 요일 grid */
     .week{
       display:grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
@@ -107,12 +108,9 @@
       border-bottom-color:#d7e6ff;
     }
 
-    /* ✅ 이동 모드일 때 목적지 선택이 쉬워지게 헤더를 더 “버튼”처럼 */
+    /* 이동 모드일 때 목적지 선택(요일/아카이브 헤더) */
     .move-mode .day-head{
       background:#eef6ff;
-    }
-    .move-mode .day-head:hover{
-      filter:brightness(0.98);
     }
 
     .slot{
@@ -125,6 +123,7 @@
       cursor:pointer;
     }
 
+    /* 칩 */
     .chip{
       height:42px;
       border:1px solid #b8bbc2;
@@ -144,7 +143,6 @@
       max-width:100%;
       touch-action: pan-y;
     }
-
     .chip-text{
       white-space:nowrap;
       overflow:hidden;
@@ -153,7 +151,6 @@
       flex:0 1 auto;
       font-weight:500;
     }
-
     .ck-count{
       flex:0 0 auto;
       font-size:12px;
@@ -167,6 +164,7 @@
     }
     .chip.has-ck .ck-count{ display:inline-flex; }
 
+    /* 완료 */
     .chip.done{
       background:var(--done-bg) !important;
       border-color:var(--done-border) !important;
@@ -184,19 +182,28 @@
       opacity:.95;
     }
 
-    /* ✅ 이동 모드에서 선택된 칩 강조 */
+    /* 이동 모드에서 선택된 칩 강조 */
     .chip.moving{
       outline:2px solid rgba(96,165,250,.85);
       outline-offset:2px;
       box-shadow: 0 10px 26px rgba(96,165,250,.18);
+      animation:pulse .9s ease-in-out infinite;
     }
     @keyframes pulse {
       0%{ transform:translateY(0); }
       50%{ transform:translateY(-1px); }
       100%{ transform:translateY(0); }
     }
-    .chip.moving{ animation:pulse .9s ease-in-out infinite; }
 
+    /* Island 3: 아카이브 */
+    .archive-card .day-head{
+      background:#f3f4f6;
+    }
+    .move-mode .archive-card .day-head{
+      background:#eef6ff;
+    }
+
+    /* 툴바 */
     .toolbar{
       display:flex;
       gap:8px;
@@ -425,14 +432,6 @@
       font-weight:500;
     }
 
-    /* ✅ 아카이브 카드 (요일 카드랑 동일한 형태) */
-    .archive-card .day-head{
-      background:#f3f4f6;
-    }
-    .move-mode .archive-card .day-head{
-      background:#eef6ff;
-    }
-
     @media (min-width:700px){
       .week{ grid-template-columns:repeat(3,minmax(0,1fr)); }
     }
@@ -444,6 +443,8 @@
 
 <body>
 <div class="app">
+
+  <!-- Island 1: 과제 추가 -->
   <div class="panel">
     <div class="add-row">
       <input id="taskInput" type="text" placeholder="과제 이모티콘을 입력해줘" />
@@ -452,12 +453,22 @@
     </div>
   </div>
 
+  <!-- Island 2: 요일 카드들 -->
   <div class="panel">
     <div class="week" id="week"></div>
     <div class="toolbar">
       <button id="newWeek">새로운 주차</button>
     </div>
   </div>
+
+  <!-- ✅ Island 3: 아카이브 카드(요일 grid 밖으로 분리) -->
+  <div class="panel">
+    <div class="day archive-card" id="archiveCard" data-area="ARCHIVE">
+      <div class="day-head" id="archiveHead">Archive</div>
+      <div class="slot" id="archiveSlot"></div>
+    </div>
+  </div>
+
 </div>
 
 <div class="modal-backdrop" id="modalBackdrop"></div>
@@ -506,7 +517,7 @@
 <script>
 (() => {
   const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const STORAGE_KEY = "weekly-board-state-tapmove-archivecard-v1";
+  const STORAGE_KEY = "weekly-board-3islands-tapmove-v1";
   const HOLD_TO_MOVE_MS = 420;
   const CLICK_DELAY = 220;
   const MAX_CHECKLIST = 5;
@@ -536,15 +547,17 @@
   let suppressClicksUntil = 0;
   let clickTimer = null;
 
-  // ✅ 이동 모드: 길게 누른 탭이 여기 들어감
   let moving = { area:null, uid:null }; // area: Sun..Sat or "ARCHIVE"
 
-  // 팝오버
   let popState = { area:null, uid:null };
   let popCloseTimer = null;
   let backdropCloseTimer = null;
 
   const weekEl = document.getElementById("week");
+  const archiveCard = document.getElementById("archiveCard");
+  const archiveHead = document.getElementById("archiveHead");
+  const archiveSlot = document.getElementById("archiveSlot");
+
   const taskInput = document.getElementById("taskInput");
   const noteInput = document.getElementById("noteInput");
   const addTaskBtn = document.getElementById("addTaskBtn");
@@ -674,7 +687,6 @@
     return true;
   }
 
-  /* ✅ 이동 모드 제어 */
   function enterMoveMode(area, uid){
     moving = { area, uid };
     document.body.classList.add("move-mode");
@@ -719,7 +731,6 @@
     const from = moving.area;
     const uid = moving.uid;
 
-    // 같은 곳이면 그냥 종료
     if (from === targetArea){
       exitMoveMode();
       return;
@@ -1023,7 +1034,7 @@
       <span class="ck-count">${ckLen}</span>
     `;
 
-    // ✅ 길게 누르면 "이동 모드"
+    // 길게 누르면 이동 모드
     let holdTimer = null;
     let holding = false;
 
@@ -1057,11 +1068,10 @@
       window.addEventListener("pointercancel", cancel, { passive:true });
     });
 
-    // click: 팝오버(이동 모드 중이면 클릭 무시)
+    // click: 팝오버(이동 모드 중이면 무시)
     chip.addEventListener("click", (e) => {
       if (nowSuppressed()) return;
       e.stopPropagation();
-
       if (moveActive()) return;
 
       if (days.includes(area)){
@@ -1076,7 +1086,7 @@
       }, CLICK_DELAY);
     });
 
-    // dblclick: 완료 (이동 모드 중이면 막음)
+    // dblclick: 완료(이동 모드 중이면 막음)
     chip.addEventListener("dblclick", (e) => {
       if (nowSuppressed()) return;
       if (moveActive()) return;
@@ -1096,7 +1106,6 @@
   function renderWeek(){
     weekEl.innerHTML = "";
 
-    // 7일 카드
     for (const day of days){
       const col = document.createElement("div");
       col.className = "day" + (day === selectedDay ? " selected" : "");
@@ -1106,15 +1115,13 @@
       head.className = "day-head";
       head.textContent = day;
 
+      // ✅ 이동 모드: 헤더 탭 = 목적지
       head.onclick = () => {
         if (nowSuppressed()) return;
-
-        // ✅ 이동 모드라면 “목적지 선택”
         if (moveActive()){
           moveItemTo(day);
           return;
         }
-
         selectedDay = day;
         saveState();
         renderAll();
@@ -1124,10 +1131,7 @@
       slot.className = "slot";
       slot.onclick = () => {
         if (nowSuppressed()) return;
-
-        // 이동 모드에서는 슬롯 클릭은 아무 것도 안 함(헤더로만 이동)
         if (moveActive()) return;
-
         selectedDay = day;
         saveState();
         renderAll();
@@ -1141,39 +1145,13 @@
       col.appendChild(slot);
       weekEl.appendChild(col);
     }
+  }
 
-    // ✅ 아카이브 카드(요일 아래, 동일 형식)
-    const ac = document.createElement("div");
-    ac.className = "day archive-card";
-    ac.dataset.area = "ARCHIVE";
-
-    const aHead = document.createElement("div");
-    aHead.className = "day-head";
-    aHead.textContent = "Archive";
-
-    aHead.onclick = () => {
-      if (nowSuppressed()) return;
-
-      if (moveActive()){
-        moveItemTo("ARCHIVE");
-        return;
-      }
-      // 아카이브 선택 상태는 따로 만들지 않고 그냥 둠
-    };
-
-    const aSlot = document.createElement("div");
-    aSlot.className = "slot";
-    aSlot.onclick = () => {
-      if (moveActive()) return;
-    };
-
-    archive.forEach((item) => {
-      aSlot.appendChild(makeChip(item, "ARCHIVE"));
+  function renderArchive(){
+    archiveSlot.innerHTML = "";
+    archive.forEach(item => {
+      archiveSlot.appendChild(makeChip(item, "ARCHIVE"));
     });
-
-    ac.appendChild(aHead);
-    ac.appendChild(aSlot);
-    weekEl.appendChild(ac);
   }
 
   function renderAll(){
@@ -1183,6 +1161,7 @@
       document.body.classList.remove("move-mode");
     }
     renderWeek();
+    renderArchive();
   }
 
   /* 입력 */
@@ -1208,19 +1187,27 @@
     renderAll();
   }
 
-  /* 이동 모드 해제: 바깥 탭하면 종료 */
+  /* 이동 모드 해제 */
   document.addEventListener("pointerdown", (e) => {
     if (!moveActive()) return;
 
     const onMovingChip = e.target.closest?.(".chip.moving");
-    const onDayHead = e.target.closest?.(".day-head");
+    const onAnyHead = e.target.closest?.(".day-head");
     const inPop = notePop.contains(e.target);
 
-    // 이동할 대상 탭은 유지, 목적지 헤더는 클릭으로 처리
-    if (onMovingChip || onDayHead || inPop) return;
+    if (onMovingChip || onAnyHead || inPop) return;
 
     exitMoveMode();
   }, { passive:true });
+
+  /* 아카이브 헤더: 이동 모드면 목적지 */
+  archiveHead.onclick = () => {
+    if (nowSuppressed()) return;
+    if (moveActive()){
+      moveItemTo("ARCHIVE");
+      return;
+    }
+  };
 
   /* 팝오버 바깥 클릭 닫기 */
   document.addEventListener("click", (e) => {
@@ -1295,7 +1282,6 @@
     alert("새로운 주차로 초기화했어.");
   };
 
-  /* 상단 입력 */
   addTaskBtn.onclick = addTask;
   taskInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
   noteInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
@@ -1309,7 +1295,7 @@
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", async () => {
       try {
-        const reg = await navigator.serviceWorker.register("./sw.js?v=61");
+        const reg = await navigator.serviceWorker.register("./sw.js?v=71");
         reg.update();
       } catch (err) {
         console.log("SW register failed:", err);
