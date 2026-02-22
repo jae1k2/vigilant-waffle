@@ -687,10 +687,41 @@
   function safeGet(key){ try{ return localStorage.getItem(key); }catch{ return null; } }
   function safeSet(key, value){ try{ localStorage.setItem(key, value); }catch{} }
 
-  function saveState(){
-    const payload = { version: 1, selectedDay, boardUid, lastColorKey, board, archive };
-    safeSet(STORAGE_KEY, JSON.stringify(payload));
+ function saveState(){
+  const payload = { version: 1, selectedDay, boardUid, lastColorKey, board, archive };
+  safeSet(STORAGE_KEY, JSON.stringify(payload));
+
+  // ✅ 이 한 줄 추가
+  window.BoardBridge?._emitDirty();
+}
+
+  // === Cloud bridge: 앱 상태를 외부에서 읽고/쓰게 해주는 창구 ===
+window.BoardBridge = {
+  getState() {
+    return { selectedDay, boardUid, lastColorKey, board, archive };
+  },
+  setState(s) {
+    if (!s || typeof s !== "object") return;
+    if (typeof s.selectedDay === "string") selectedDay = s.selectedDay;
+    if (Number.isFinite(s.boardUid)) boardUid = s.boardUid;
+    if (typeof s.lastColorKey === "string" || s.lastColorKey === null) lastColorKey = s.lastColorKey;
+    if (s.board && typeof s.board === "object") board = s.board;
+    if (Array.isArray(s.archive)) archive = s.archive;
+
+    renderAll();
+    saveState(); // 로컬 보험
+  },
+  // 로컬 변경이 발생할 때 클라우드에 “업로드 예약”할 수 있게 콜백 등록
+  onDirty(cb) {
+    window.BoardBridge._dirtyCbs ??= [];
+    window.BoardBridge._dirtyCbs.push(cb);
+  },
+  _emitDirty() {
+    (window.BoardBridge._dirtyCbs || []).forEach(fn => {
+      try { fn(); } catch {}
+    });
   }
+};
 
   function normalizeItem(item){
     return {
@@ -1772,5 +1803,6 @@
       if (!data) return;
 </body>
 </html>
+
 
 
