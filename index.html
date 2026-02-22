@@ -1571,5 +1571,205 @@
     });
   }
 </script>
+  <!-- Supabase Login Bar (작게, 화면 위) -->
+<div id="cloudBar" style="
+  position:fixed; top:10px; right:10px; z-index:9999;
+  display:flex; gap:8px; align-items:center;
+  background:rgba(255,255,255,.86); backdrop-filter: blur(10px);
+  border:1px solid rgba(217,217,222,.9);
+  padding:8px 10px; border-radius:12px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans KR',sans-serif;
+">
+  <span id="cloudStatus" style="font-size:12px; font-weight:500; color:#374151;">Cloud: 연결 안 됨</span>
+  <button id="cloudBtn" style="
+    height:30px; padding:0 10px; border-radius:10px;
+    border:1px solid #c8cad0; background:#fff;
+    font-size:12px; font-weight:500; cursor:pointer;
+  ">로그인</button>
+</div>
+
+<!-- Login Popup -->
+<div id="loginModal" style="
+  position:fixed; inset:0; display:none; z-index:10000;
+  background:rgba(255,255,255,.01); backdrop-filter: blur(2px);
+">
+  <div style="
+    width:min(360px, calc(100vw - 24px));
+    margin: calc(18vh) auto 0;
+    background:#fff; border:1px solid rgba(217,217,222,.9);
+    border-radius:14px; padding:12px;
+    box-shadow: 0 14px 34px rgba(16,24,40,.18);
+  ">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+      <div style="font-size:14px; font-weight:600; color:#111827;">이메일로 로그인</div>
+      <button id="loginClose" style="
+        height:30px; padding:0 10px; border-radius:10px;
+        border:1px solid #c8cad0; background:#fff;
+        font-size:12px; font-weight:500; cursor:pointer;
+      ">닫기</button>
+    </div>
+
+    <div style="margin-top:10px; display:flex; gap:8px;">
+      <input id="loginEmail" type="email" placeholder="이메일 입력"
+        style="flex:1; height:36px; border:1px solid #cbd5e1; border-radius:10px; padding:0 10px; font-size:13px; font-weight:500;">
+      <button id="loginSend" style="
+        height:36px; padding:0 10px; border-radius:10px;
+        border:1px solid #c8cad0; background:#fff;
+        font-size:12px; font-weight:500; cursor:pointer;
+        white-space:nowrap;
+      ">링크 보내기</button>
+    </div>
+
+    <div id="loginHint" style="margin-top:8px; font-size:12px; color:#6b7280; line-height:1.4;">
+      메일로 온 링크를 같은 기기에서 열면 자동 로그인돼.
+    </div>
+  </div>
+</div>
+  <script type="module">
+  // ✅ Supabase JS SDK (CDN: esm.sh가 브라우저에서 안정적인 편)
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  // =========================
+  // 0) 여기에 네 키 넣기
+  // =========================
+  const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
+  const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // =========================
+  // 1) UI 엘리먼트
+  // =========================
+  const cloudStatus = document.getElementById("cloudStatus");
+  const cloudBtn = document.getElementById("cloudBtn");
+
+  const loginModal = document.getElementById("loginModal");
+  const loginClose = document.getElementById("loginClose");
+  const loginEmail = document.getElementById("loginEmail");
+  const loginSend = document.getElementById("loginSend");
+  const loginHint = document.getElementById("loginHint");
+
+  function setStatus(text){
+    cloudStatus.textContent = text;
+  }
+
+  function openLogin(){
+    loginModal.style.display = "block";
+    setTimeout(() => loginEmail?.focus(), 0);
+  }
+  function closeLogin(){
+    loginModal.style.display = "none";
+  }
+
+  loginClose.onclick = closeLogin;
+  loginModal.addEventListener("click", (e) => {
+    if (e.target === loginModal) closeLogin();
+  });
+
+  // =========================
+  // 2) 로컬 상태 <-> 클라우드 상태 변환
+  // =========================
+  function getAppState(){
+    // 네 앱의 전역 상태를 그대로 저장
+    return {
+      selectedDay,
+      boardUid,
+      lastColorKey,
+      board,
+      archive
+    };
+  }
+
+  function setAppState(state){
+    // 들어온 상태로 앱 전역 변수를 갱신
+    // (없는 키는 무시)
+    if (!state || typeof state !== "object") return;
+
+    if (typeof state.selectedDay === "string") selectedDay = state.selectedDay;
+    if (Number.isFinite(state.boardUid)) boardUid = state.boardUid;
+    if (typeof state.lastColorKey === "string" || state.lastColorKey === null) lastColorKey = state.lastColorKey;
+
+    if (state.board && typeof state.board === "object") board = state.board;
+    if (Array.isArray(state.archive)) archive = state.archive;
+
+    // 화면 갱신
+    if (typeof renderAll === "function") renderAll();
+
+    // 로컬에도 저장(오프라인 보험)
+    if (typeof saveState === "function") saveState();
+  }
+
+  // =========================
+  // 3) 동기화 엔진
+  // =========================
+  const clientIdKey = "weekly-board-client-id";
+  const clientId = (() => {
+    let v = localStorage.getItem(clientIdKey);
+    if (!v){
+      v = "c_" + Math.random().toString(36).slice(2) + "_" + Date.now().toString(36);
+      localStorage.setItem(clientIdKey, v);
+    }
+    return v;
+  })();
+
+  let uid = null;
+  let localRev = 0;
+  let pushing = false;
+  let pullLock = false;
+  let debounceTimer = null;
+  let channel = null;
+
+  function debouncePush(ms=450){
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => pushCloud(), ms);
+  }
+
+  async function ensureRow(){
+    // 내 row를 가져오고, 없으면 생성
+    const { data, error } = await supabase
+      .from("boards")
+      .select("state, rev, updated_at, client_id")
+      .eq("user_id", uid)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data){
+      // 서버에 아직 없음 -> 로컬 상태를 서버에 최초 업로드
+      const initState = getAppState();
+      const { error: insErr } = await supabase
+        .from("boards")
+        .insert({
+          user_id: uid,
+          state: initState,
+          rev: 1,
+          client_id: clientId
+        });
+      if (insErr) throw insErr;
+      localRev = 1;
+      return { state: initState, rev: 1 };
+    }
+
+    localRev = Number(data.rev) || 0;
+    return { state: data.state, rev: localRev, client_id: data.client_id };
+  }
+
+  async function pullCloud(){
+    if (!uid) return;
+    if (pullLock) return;
+    pullLock = true;
+
+    try{
+      setStatus("Cloud: 불러오는 중…");
+
+      const { data, error } = await supabase
+        .from("boards")
+        .select("state, rev, client_id, updated_at")
+        .eq("user_id", uid)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return;
 </body>
 </html>
+
