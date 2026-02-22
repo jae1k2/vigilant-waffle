@@ -24,8 +24,6 @@
 
       --radius:14px;
       --shadow: 0 14px 34px rgba(16,24,40,.18);
-
-      --archive-h: 86px; /* 하단 보관 구역 높이 */
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -33,13 +31,7 @@
       margin:0; background:var(--bg); color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
     }
-
-    .app{
-      max-width:1080px;
-      margin:0 auto;
-      padding:12px;
-      padding-bottom: calc(var(--archive-h) + 16px); /* ✅ 아카이브 고정영역 만큼 바닥 여백 */
-    }
+    .app{ max-width:1080px; margin:0 auto; padding:12px; }
 
     .panel{
       border:1.5px solid var(--line);
@@ -49,7 +41,6 @@
       margin-bottom:12px;
     }
 
-    /* 상단 입력 */
     .add-row{
       display:flex;
       gap:8px;
@@ -85,7 +76,6 @@
       white-space:nowrap;
     }
 
-    /* 주간 보드 */
     .week{
       display:grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
@@ -117,6 +107,14 @@
       border-bottom-color:#d7e6ff;
     }
 
+    /* ✅ 이동 모드일 때 목적지 선택이 쉬워지게 헤더를 더 “버튼”처럼 */
+    .move-mode .day-head{
+      background:#eef6ff;
+    }
+    .move-mode .day-head:hover{
+      filter:brightness(0.98);
+    }
+
     .slot{
       padding:8px;
       display:flex;
@@ -127,7 +125,6 @@
       cursor:pointer;
     }
 
-    /* 칩 */
     .chip{
       height:42px;
       border:1px solid #b8bbc2;
@@ -147,6 +144,7 @@
       max-width:100%;
       touch-action: pan-y;
     }
+
     .chip-text{
       white-space:nowrap;
       overflow:hidden;
@@ -169,7 +167,6 @@
     }
     .chip.has-ck .ck-count{ display:inline-flex; }
 
-    /* 완료 스타일 */
     .chip.done{
       background:var(--done-bg) !important;
       border-color:var(--done-border) !important;
@@ -187,44 +184,19 @@
       opacity:.95;
     }
 
-    /* 이동 모드(armed) 표시 */
-    .chip.armed{
-      outline:2px solid rgba(96,165,250,.75);
+    /* ✅ 이동 모드에서 선택된 칩 강조 */
+    .chip.moving{
+      outline:2px solid rgba(96,165,250,.85);
       outline-offset:2px;
-      box-shadow: 0 8px 20px rgba(96,165,250,.18);
+      box-shadow: 0 10px 26px rgba(96,165,250,.18);
     }
-    @keyframes nudge {
+    @keyframes pulse {
       0%{ transform:translateY(0); }
       50%{ transform:translateY(-1px); }
       100%{ transform:translateY(0); }
     }
-    body.reorder-mode .chip.armed{
-      animation:nudge 0.9s ease-in-out infinite;
-    }
+    .chip.moving{ animation:pulse .9s ease-in-out infinite; }
 
-    /* 드래그 */
-    .drag-ghost{
-      position:fixed;
-      z-index:2000;
-      pointer-events:none;
-      opacity:.92;
-      transform:translate(-50%,-50%);
-      box-shadow: var(--shadow);
-    }
-    .drag-placeholder{
-      width:46px;
-      height:42px;
-      border-radius:999px;
-      border:2px dashed rgba(148,163,184,.7);
-      background:rgba(148,163,184,.08);
-    }
-    body.dragging{
-      user-select:none;
-      -webkit-user-select:none;
-      touch-action:none;
-    }
-
-    /* 하단 버튼 */
     .toolbar{
       display:flex;
       gap:8px;
@@ -242,7 +214,7 @@
       cursor:pointer;
     }
 
-    /* 모달/팝오버 */
+    /* 팝오버/모달 */
     .modal-backdrop{
       position:fixed;
       inset:0;
@@ -453,49 +425,19 @@
       font-weight:500;
     }
 
-    /* ✅ 하단 아카이브(보관) 구역: 헤더 없음, 그냥 슬롯만 */
-    .archive{
-      position:fixed;
-      left:50%;
-      transform:translateX(-50%);
-      bottom:0;
-      width:min(1080px, 100vw);
-      padding:10px 12px calc(10px + env(safe-area-inset-bottom));
-      background:rgba(255,255,255,.92);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-top:1px solid rgba(217,217,222,.9);
-      z-index:40;
+    /* ✅ 아카이브 카드 (요일 카드랑 동일한 형태) */
+    .archive-card .day-head{
+      background:#f3f4f6;
     }
-    .archive-inner{
-      border:1.5px solid var(--line);
-      border-radius:14px;
-      background:rgba(247,247,248,.95);
-      padding:8px;
+    .move-mode .archive-card .day-head{
+      background:#eef6ff;
     }
-    .archive-slot{
-      min-height:52px;
-      display:flex;
-      flex-wrap:nowrap;
-      gap:8px;
-      overflow-x:auto;
-      overflow-y:hidden;
-      padding:4px;
-      -webkit-overflow-scrolling: touch;
-      align-items:center;
-    }
-    .archive-slot::-webkit-scrollbar{ height:8px; }
-    .archive-slot::-webkit-scrollbar-thumb{ background:rgba(148,163,184,.35); border-radius:999px; }
 
     @media (min-width:700px){
       .week{ grid-template-columns:repeat(3,minmax(0,1fr)); }
     }
     @media (min-width:1024px){
-      .week{ grid-template-columns:repeat(7,minmax(120px,1fr)); }
-      .day{ min-height:200px; }
-      .slot{ min-height:145px; }
-      .archive-slot{ flex-wrap:wrap; overflow-x:hidden; }
-      :root{ --archive-h: 118px; }
+      .week{ grid-template-columns:repeat(4,minmax(200px,1fr)); }
     }
   </style>
 </head>
@@ -515,13 +457,6 @@
     <div class="toolbar">
       <button id="newWeek">새로운 주차</button>
     </div>
-  </div>
-</div>
-
-<!-- ✅ 아카이브 (헤더 없음) -->
-<div class="archive" id="archiveWrap" data-area="ARCHIVE">
-  <div class="archive-inner">
-    <div class="archive-slot" id="archiveSlot"></div>
   </div>
 </div>
 
@@ -571,8 +506,8 @@
 <script>
 (() => {
   const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const STORAGE_KEY = "weekly-board-state-with-archive-v1";
-  const HOLD_TO_ARM_MS = 420;
+  const STORAGE_KEY = "weekly-board-state-tapmove-archivecard-v1";
+  const HOLD_TO_MOVE_MS = 420;
   const CLICK_DELAY = 220;
   const MAX_CHECKLIST = 5;
 
@@ -596,36 +531,20 @@
   let boardUid = 1;
   let lastColorKey = null;
   let board = emptyBoard();
-  let archive = []; // ✅ 보관 구역 데이터
+  let archive = [];
 
   let suppressClicksUntil = 0;
   let clickTimer = null;
 
-  // 이동 모드
-  let armed = { area:null, uid:null }; // area: 요일(Sun..Sat) 또는 "ARCHIVE"
+  // ✅ 이동 모드: 길게 누른 탭이 여기 들어감
+  let moving = { area:null, uid:null }; // area: Sun..Sat or "ARCHIVE"
 
   // 팝오버
   let popState = { area:null, uid:null };
   let popCloseTimer = null;
   let backdropCloseTimer = null;
 
-  // 드래그
-  const drag = {
-    active:false,
-    pointerId:null,
-    el:null,
-    uid:null,
-    srcArea:null,   // "Sun..Sat" or "ARCHIVE"
-    ghost:null,
-    placeholder:null,
-    moveHandler:null,
-    upHandler:null,
-    cancelHandler:null,
-  };
-
   const weekEl = document.getElementById("week");
-  const archiveSlot = document.getElementById("archiveSlot");
-
   const taskInput = document.getElementById("taskInput");
   const noteInput = document.getElementById("noteInput");
   const addTaskBtn = document.getElementById("addTaskBtn");
@@ -728,9 +647,7 @@
   function nowSuppressed(){ return Date.now() < suppressClicksUntil; }
 
   function findItemInArea(area, uid){
-    if (area === "ARCHIVE"){
-      return archive.find(x => x.uid === uid) || null;
-    }
+    if (area === "ARCHIVE") return archive.find(x => x.uid === uid) || null;
     return (board[area] || []).find(x => x.uid === uid) || null;
   }
 
@@ -757,22 +674,72 @@
     return true;
   }
 
-  /* 이동 모드 */
-  function armChip(area, uid){
-    armed = { area, uid };
-    document.body.classList.add("reorder-mode");
+  /* ✅ 이동 모드 제어 */
+  function enterMoveMode(area, uid){
+    moving = { area, uid };
+    document.body.classList.add("move-mode");
     renderAll();
   }
-  function disarm(){
-    armed = { area:null, uid:null };
-    document.body.classList.remove("reorder-mode");
+  function exitMoveMode(){
+    moving = { area:null, uid:null };
+    document.body.classList.remove("move-mode");
     renderAll();
   }
-  function isArmed(area, uid){
-    return armed.area === area && armed.uid === uid;
+  function isMoving(area, uid){
+    return moving.area === area && moving.uid === uid;
+  }
+  function moveActive(){
+    return Boolean(moving.uid);
   }
 
-  /* 팝오버 (기존 로직 유지) */
+  function takeFromArea(area, uid){
+    if (area === "ARCHIVE"){
+      const idx = archive.findIndex(x => x.uid === uid);
+      if (idx === -1) return null;
+      return archive.splice(idx, 1)[0];
+    }
+    const arr = board[area] || [];
+    const idx = arr.findIndex(x => x.uid === uid);
+    if (idx === -1) return null;
+    return arr.splice(idx, 1)[0];
+  }
+
+  function pushToArea(area, item){
+    if (!item) return;
+    if (area === "ARCHIVE"){
+      archive.push(item);
+      return;
+    }
+    (board[area] || (board[area] = [])).push(item);
+  }
+
+  function moveItemTo(targetArea){
+    if (!moveActive()) return;
+
+    const from = moving.area;
+    const uid = moving.uid;
+
+    // 같은 곳이면 그냥 종료
+    if (from === targetArea){
+      exitMoveMode();
+      return;
+    }
+
+    const item = takeFromArea(from, uid);
+    if (!item){
+      exitMoveMode();
+      return;
+    }
+
+    pushToArea(targetArea, item);
+
+    if (days.includes(targetArea)) selectedDay = targetArea;
+
+    saveState();
+    exitMoveMode();
+  }
+
+  /* ===== 팝오버 ===== */
   function showBackdrop(){
     clearTimeout(backdropCloseTimer);
     modalBackdrop.style.display = "block";
@@ -1038,276 +1005,13 @@
     setMode("view");
   }
 
-  /* ===== 드래그 대상 판정: 요일들 + 아카이브 둘 다 포함 ===== */
-  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-
-  function nearestTargetEl(x, y){
-    const els = [
-      ...Array.from(document.querySelectorAll(".day")),
-      document.getElementById("archiveWrap")
-    ].filter(Boolean);
-
-    let best = null, bestDist = Infinity;
-
-    for (const el of els){
-      const r = el.getBoundingClientRect();
-      const cx = clamp(x, r.left, r.right);
-      const cy = clamp(y, r.top, r.bottom);
-      const dx = x - cx, dy = y - cy;
-      const d2 = dx*dx + dy*dy;
-      if (d2 < bestDist){
-        bestDist = d2;
-        best = el;
-      }
-    }
-    if (!best) return null;
-    if (bestDist > 190*190) return null;
-    return best;
-  }
-
-  function getSlotFromTargetEl(targetEl){
-    if (!targetEl) return null;
-    if (targetEl.classList.contains("day")) return targetEl.querySelector(".slot");
-    if (targetEl.id === "archiveWrap") return document.getElementById("archiveSlot");
-    return null;
-  }
-
-  function getAreaFromTargetEl(targetEl){
-    if (!targetEl) return null;
-    if (targetEl.classList.contains("day")) return targetEl.dataset.day;
-    if (targetEl.id === "archiveWrap") return "ARCHIVE";
-    return null;
-  }
-
-  function chipsInSlot(slot){
-    return Array.from(slot.querySelectorAll(".chip"))
-      .filter(ch => ch.dataset.dragging !== "1");
-  }
-
-  function computeInsertIndex(slot, x, y){
-    const chips = chipsInSlot(slot);
-    if (!chips.length) return 0;
-
-    let idx = chips.length;
-
-    for (let i=0;i<chips.length;i++){
-      const r = chips[i].getBoundingClientRect();
-      const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
-      const mid = r.left + r.width/2;
-
-      // 아카이브(가로 스크롤)는 x 중심 기준이 더 자연스럽고,
-      // 요일 슬롯은 기존대로 y도 같이 고려
-      if (sameRow && x < mid){ idx=i; break; }
-      if (!slot.classList.contains("archive-slot") && y < r.top + r.height/2){ idx=i; break; }
-    }
-    return idx;
-  }
-
-  function placePlaceholder(slot, idx){
-    if (!drag.placeholder) return;
-    const chips = chipsInSlot(slot);
-    const before = chips[idx] || null;
-    slot.insertBefore(drag.placeholder, before);
-  }
-
-  function placeholderIndex(slot){
-    if (!drag.placeholder) return 0;
-    let idx = 0;
-    for (const child of slot.children){
-      if (child === drag.placeholder) break;
-      if (child.classList && child.classList.contains("chip") && child.dataset.dragging !== "1"){
-        idx++;
-      }
-    }
-    return idx;
-  }
-
-  function beginDrag(el, srcArea, uid, e){
-    closeNotePop();
-
-    drag.active = true;
-    drag.pointerId = e.pointerId;
-    drag.el = el;
-    drag.uid = uid;
-    drag.srcArea = srcArea;
-
-    document.body.classList.add("dragging");
-
-    const ph = document.createElement("div");
-    ph.className = "drag-placeholder";
-    drag.placeholder = ph;
-    el.parentNode.insertBefore(ph, el);
-
-    const ghost = el.cloneNode(true);
-    ghost.classList.add("drag-ghost");
-    document.body.appendChild(ghost);
-    drag.ghost = ghost;
-
-    ghost.style.left = e.clientX + "px";
-    ghost.style.top = e.clientY + "px";
-
-    el.dataset.dragging = "1";
-    el.style.position = "fixed";
-    el.style.left = "-9999px";
-    el.style.top = "-9999px";
-    el.style.pointerEvents = "none";
-
-    try{ el.setPointerCapture(e.pointerId); }catch{}
-
-    drag.moveHandler = (ev) => {
-      if (!drag.active) return;
-      if (ev.pointerId !== drag.pointerId) return;
-      ev.preventDefault();
-
-      drag.ghost.style.left = ev.clientX + "px";
-      drag.ghost.style.top = ev.clientY + "px";
-
-      const targetEl = nearestTargetEl(ev.clientX, ev.clientY);
-      if (!targetEl) return;
-
-      const slot = getSlotFromTargetEl(targetEl);
-      if (!slot) return;
-
-      const idx = computeInsertIndex(slot, ev.clientX, ev.clientY);
-      placePlaceholder(slot, idx);
-    };
-
-    drag.upHandler = (ev) => {
-      if (!drag.active) return;
-      if (ev.pointerId !== drag.pointerId) return;
-      ev.preventDefault();
-      finishDrag(ev.clientX, ev.clientY);
-    };
-
-    drag.cancelHandler = (ev) => {
-      if (!drag.active) return;
-      if (ev.pointerId !== drag.pointerId) return;
-      ev.preventDefault();
-      cancelDrag();
-    };
-
-    el.addEventListener("pointermove", drag.moveHandler, { passive:false });
-    el.addEventListener("pointerup", drag.upHandler, { passive:false });
-    el.addEventListener("pointercancel", drag.cancelHandler, { passive:false });
-
-    suppressClicksUntil = Date.now() + 500;
-  }
-
-  function cleanupDrag(){
-    document.body.classList.remove("dragging");
-
-    if (drag.el){
-      try{ drag.el.releasePointerCapture(drag.pointerId); }catch{}
-      drag.el.removeEventListener("pointermove", drag.moveHandler);
-      drag.el.removeEventListener("pointerup", drag.upHandler);
-      drag.el.removeEventListener("pointercancel", drag.cancelHandler);
-
-      delete drag.el.dataset.dragging;
-      drag.el.style.position = "";
-      drag.el.style.left = "";
-      drag.el.style.top = "";
-      drag.el.style.pointerEvents = "";
-    }
-
-    if (drag.ghost && drag.ghost.parentNode) drag.ghost.parentNode.removeChild(drag.ghost);
-    if (drag.placeholder && drag.placeholder.parentNode) drag.placeholder.parentNode.removeChild(drag.placeholder);
-
-    drag.active = false;
-    drag.pointerId = null;
-    drag.el = null;
-    drag.uid = null;
-    drag.srcArea = null;
-    drag.ghost = null;
-    drag.placeholder = null;
-    drag.moveHandler = null;
-    drag.upHandler = null;
-    drag.cancelHandler = null;
-  }
-
-  function takeFromArea(area, uid){
-    if (area === "ARCHIVE"){
-      const idx = archive.findIndex(x => x.uid === uid);
-      if (idx === -1) return null;
-      return archive.splice(idx, 1)[0];
-    }
-    const arr = board[area] || [];
-    const idx = arr.findIndex(x => x.uid === uid);
-    if (idx === -1) return null;
-    return arr.splice(idx, 1)[0];
-  }
-
-  function insertIntoArea(area, item, index){
-    if (!item) return;
-    if (area === "ARCHIVE"){
-      const idx = Math.min(archive.length, Math.max(0, index));
-      archive.splice(idx, 0, item);
-      return;
-    }
-    const arr = board[area] || (board[area] = []);
-    const idx = Math.min(arr.length, Math.max(0, index));
-    arr.splice(idx, 0, item);
-  }
-
-  function finishDrag(x, y){
-    const targetEl = nearestTargetEl(x, y);
-    if (targetEl){
-      const slot = getSlotFromTargetEl(targetEl);
-      if (slot){
-        const idx = computeInsertIndex(slot, x, y);
-        placePlaceholder(slot, idx);
-      }
-    }
-
-    const ph = drag.placeholder;
-    if (!ph || !ph.parentElement){
-      cleanupDrag();
-      renderAll();
-      disarm();
-      return;
-    }
-
-    const toSlot = ph.parentElement;
-    const toTargetEl = (toSlot.id === "archiveSlot")
-      ? document.getElementById("archiveWrap")
-      : toSlot.closest(".day");
-
-    const toArea = getAreaFromTargetEl(toTargetEl) || drag.srcArea;
-    const fromArea = drag.srcArea;
-    const uid = drag.uid;
-
-    const item = takeFromArea(fromArea, uid);
-    if (!item){
-      cleanupDrag();
-      renderAll();
-      disarm();
-      return;
-    }
-
-    const idx = placeholderIndex(toSlot);
-    insertIntoArea(toArea, item, idx);
-
-    // 선택 요일은 “요일로 옮겼을 때만” 업데이트
-    if (days.includes(toArea)) selectedDay = toArea;
-
-    saveState();
-    cleanupDrag();
-    renderAll();
-    disarm();
-  }
-
-  function cancelDrag(){
-    cleanupDrag();
-    renderAll();
-    disarm();
-  }
-
   /* ===== 렌더 ===== */
   function makeChip(item, area){
     const ckLen = Array.isArray(item.checklist) ? item.checklist.length : 0;
 
     const chip = document.createElement("div");
     chip.className = "chip" + (item.done ? " done" : "") + (ckLen ? " has-ck" : "");
-    if (isArmed(area, item.uid)) chip.classList.add("armed");
+    if (isMoving(area, item.uid)) chip.classList.add("moving");
 
     chip.dataset.uid = item.uid;
     chip.dataset.area = area;
@@ -1319,7 +1023,7 @@
       <span class="ck-count">${ckLen}</span>
     `;
 
-    // pointerdown: (1) armed면 즉시 드래그 (2) 아니면 길게 눌러 armed
+    // ✅ 길게 누르면 "이동 모드"
     let holdTimer = null;
     let holding = false;
 
@@ -1329,22 +1033,17 @@
     };
 
     chip.addEventListener("pointerdown", (e) => {
-      if (drag.active) return;
       if (nowSuppressed()) return;
       if (e.button !== undefined && e.button !== 0) return;
-
-      if (isArmed(area, item.uid)){
-        beginDrag(chip, area, item.uid, e);
-        return;
-      }
 
       holding = true;
       holdTimer = setTimeout(() => {
         if (!holding) return;
         clearHold();
-        armChip(area, item.uid);
-        suppressClicksUntil = Date.now() + 250;
-      }, HOLD_TO_ARM_MS);
+        closeNotePop();
+        enterMoveMode(area, item.uid);
+        suppressClicksUntil = Date.now() + 200;
+      }, HOLD_TO_MOVE_MS);
 
       const up = () => { clearHold(); cleanup(); };
       const cancel = () => { clearHold(); cleanup(); };
@@ -1358,17 +1057,17 @@
       window.addEventListener("pointercancel", cancel, { passive:true });
     });
 
-    // click: 팝오버 (armed면 무시)
+    // click: 팝오버(이동 모드 중이면 클릭 무시)
     chip.addEventListener("click", (e) => {
-      if (drag.active) return;
       if (nowSuppressed()) return;
       e.stopPropagation();
 
-      if (isArmed(area, item.uid)) return;
+      if (moveActive()) return;
 
       if (days.includes(area)){
         selectedDay = area;
         saveState();
+        renderAll();
       }
 
       clearTimeout(clickTimer);
@@ -1377,11 +1076,10 @@
       }, CLICK_DELAY);
     });
 
-    // dblclick: 완료 토글 (armed면 무시)
+    // dblclick: 완료 (이동 모드 중이면 막음)
     chip.addEventListener("dblclick", (e) => {
-      if (drag.active) return;
       if (nowSuppressed()) return;
-      if (isArmed(area, item.uid)) return;
+      if (moveActive()) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -1398,16 +1096,25 @@
   function renderWeek(){
     weekEl.innerHTML = "";
 
+    // 7일 카드
     for (const day of days){
       const col = document.createElement("div");
       col.className = "day" + (day === selectedDay ? " selected" : "");
-      col.dataset.day = day;
+      col.dataset.area = day;
 
       const head = document.createElement("div");
       head.className = "day-head";
       head.textContent = day;
+
       head.onclick = () => {
-        if (nowSuppressed() || drag.active) return;
+        if (nowSuppressed()) return;
+
+        // ✅ 이동 모드라면 “목적지 선택”
+        if (moveActive()){
+          moveItemTo(day);
+          return;
+        }
+
         selectedDay = day;
         saveState();
         renderAll();
@@ -1416,7 +1123,11 @@
       const slot = document.createElement("div");
       slot.className = "slot";
       slot.onclick = () => {
-        if (nowSuppressed() || drag.active) return;
+        if (nowSuppressed()) return;
+
+        // 이동 모드에서는 슬롯 클릭은 아무 것도 안 함(헤더로만 이동)
+        if (moveActive()) return;
+
         selectedDay = day;
         saveState();
         renderAll();
@@ -1430,18 +1141,48 @@
       col.appendChild(slot);
       weekEl.appendChild(col);
     }
-  }
 
-  function renderArchive(){
-    archiveSlot.innerHTML = "";
-    archive.forEach(item => {
-      archiveSlot.appendChild(makeChip(item, "ARCHIVE"));
+    // ✅ 아카이브 카드(요일 아래, 동일 형식)
+    const ac = document.createElement("div");
+    ac.className = "day archive-card";
+    ac.dataset.area = "ARCHIVE";
+
+    const aHead = document.createElement("div");
+    aHead.className = "day-head";
+    aHead.textContent = "Archive";
+
+    aHead.onclick = () => {
+      if (nowSuppressed()) return;
+
+      if (moveActive()){
+        moveItemTo("ARCHIVE");
+        return;
+      }
+      // 아카이브 선택 상태는 따로 만들지 않고 그냥 둠
+    };
+
+    const aSlot = document.createElement("div");
+    aSlot.className = "slot";
+    aSlot.onclick = () => {
+      if (moveActive()) return;
+    };
+
+    archive.forEach((item) => {
+      aSlot.appendChild(makeChip(item, "ARCHIVE"));
     });
+
+    ac.appendChild(aHead);
+    ac.appendChild(aSlot);
+    weekEl.appendChild(ac);
   }
 
   function renderAll(){
+    if (moveActive()){
+      document.body.classList.add("move-mode");
+    }else{
+      document.body.classList.remove("move-mode");
+    }
     renderWeek();
-    renderArchive();
   }
 
   /* 입력 */
@@ -1467,15 +1208,21 @@
     renderAll();
   }
 
-  /* 이벤트: 이동 모드 해제 */
+  /* 이동 모드 해제: 바깥 탭하면 종료 */
   document.addEventListener("pointerdown", (e) => {
-    if (!armed.uid) return;
-    const onArmed = e.target.closest?.(".chip.armed");
-    if (onArmed) return;
-    disarm();
+    if (!moveActive()) return;
+
+    const onMovingChip = e.target.closest?.(".chip.moving");
+    const onDayHead = e.target.closest?.(".day-head");
+    const inPop = notePop.contains(e.target);
+
+    // 이동할 대상 탭은 유지, 목적지 헤더는 클릭으로 처리
+    if (onMovingChip || onDayHead || inPop) return;
+
+    exitMoveMode();
   }, { passive:true });
 
-  /* 팝오버 닫기 */
+  /* 팝오버 바깥 클릭 닫기 */
   document.addEventListener("click", (e) => {
     const inPop = notePop.contains(e.target);
     const onChip = e.target.closest && e.target.closest(".chip");
@@ -1542,7 +1289,7 @@
     board = emptyBoard();
     selectedDay = "Mon";
     closeNotePop();
-    disarm();
+    exitMoveMode();
     saveState();
     renderAll();
     alert("새로운 주차로 초기화했어.");
@@ -1559,11 +1306,10 @@
 </script>
 
 <script>
-  // SW 등록(있을 때만)
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", async () => {
       try {
-        const reg = await navigator.serviceWorker.register("./sw.js?v=41");
+        const reg = await navigator.serviceWorker.register("./sw.js?v=61");
         reg.update();
       } catch (err) {
         console.log("SW register failed:", err);
