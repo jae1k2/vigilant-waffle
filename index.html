@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>주간 보드</title>
 
-  <!-- PWA (있으면 유지) -->
+  <!-- PWA(쓰고 있으면 유지) -->
   <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="./icon-192.png">
@@ -25,7 +25,8 @@
       --radius:14px;
       --shadow: 0 14px 34px rgba(16,24,40,.18);
 
-      --archive-h: 86px; /* 하단 보관 구역 높이 */
+      --archive-h: 86px;
+      --gap:10px; /* 팝오버 내부 간격 기준 */
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -38,7 +39,7 @@
       max-width:1080px;
       margin:0 auto;
       padding:12px;
-      padding-bottom: calc(var(--archive-h) + 16px); /* ✅ 아카이브 고정영역 만큼 바닥 여백 */
+      padding-bottom: calc(var(--archive-h) + 16px);
     }
 
     .panel{
@@ -49,7 +50,6 @@
       margin-bottom:12px;
     }
 
-    /* 상단 입력 */
     .add-row{
       display:flex;
       gap:8px;
@@ -64,14 +64,14 @@
       font-size:14px;
       background:#fff;
       color:#111827;
-      font-weight:600;
+      font-weight:500;
     }
     .add-row input::placeholder{
       color:#9aa3b2;
       font-weight:400;
     }
     #taskInput{ flex:1 1 260px; min-width:170px; }
-    #noteInput{ flex:1 1 380px; min-width:220px; font-weight:500; color:#2f3a4a; }
+    #noteInput{ flex:1 1 380px; min-width:220px; }
 
     .add-row button{
       border:1px solid #c8cad0;
@@ -85,7 +85,6 @@
       white-space:nowrap;
     }
 
-    /* 주간 보드 */
     .week{
       display:grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
@@ -127,7 +126,6 @@
       cursor:pointer;
     }
 
-    /* 칩 */
     .chip{
       height:42px;
       border:1px solid #b8bbc2;
@@ -155,7 +153,6 @@
       flex:0 1 auto;
       font-weight:500;
     }
-
     .ck-count{
       flex:0 0 auto;
       font-size:12px;
@@ -169,7 +166,6 @@
     }
     .chip.has-ck .ck-count{ display:inline-flex; }
 
-    /* 완료 스타일 */
     .chip.done{
       background:var(--done-bg) !important;
       border-color:var(--done-border) !important;
@@ -187,7 +183,6 @@
       opacity:.95;
     }
 
-    /* 이동 모드(armed) 표시 */
     .chip.armed{
       outline:2px solid rgba(96,165,250,.75);
       outline-offset:2px;
@@ -202,7 +197,6 @@
       animation:nudge 0.9s ease-in-out infinite;
     }
 
-    /* 드래그 */
     .drag-ghost{
       position:fixed;
       z-index:2000;
@@ -224,7 +218,6 @@
       touch-action:none;
     }
 
-    /* 하단 버튼 */
     .toolbar{
       display:flex;
       gap:8px;
@@ -242,7 +235,6 @@
       cursor:pointer;
     }
 
-    /* 모달/팝오버 */
     .modal-backdrop{
       position:fixed;
       inset:0;
@@ -276,7 +268,7 @@
       transition:opacity .14s ease, transform .14s ease;
 
       flex-direction:column;
-      gap:10px;
+      gap:var(--gap);
     }
     .note-pop.show{ opacity:1; transform:translateY(0); }
 
@@ -288,7 +280,7 @@
     }
     .note-top .ttl{
       font-size:16px;
-      font-weight:600;
+      font-weight:500; /* ✅ 볼드 과함 해제 */
       color:#2f3a4a;
       min-width:0;
       overflow:hidden;
@@ -324,12 +316,12 @@
       border-radius:10px;
       border:1px solid rgba(148,163,184,.35);
       background:rgba(255,255,255,.68);
-      padding:7px 8px;
+      padding:7px 10px;
       min-height:44px;
 
       display:flex;
-      align-items:center;
-      justify-content:flex-start;
+      align-items:center;            /* ✅ 왼편 중앙 */
+      justify-content:flex-start;    /* ✅ 왼편 */
       text-align:left;
 
       font-size:13px;
@@ -343,7 +335,7 @@
     .edit-wrap{
       display:none;
       flex-direction:column;
-      gap:10px;
+      gap:var(--gap);
     }
     .edit-wrap input, .edit-wrap textarea{
       width:100%;
@@ -372,7 +364,7 @@
       width:100%;
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:var(--gap);
     }
     .check-list{
       display:flex;
@@ -390,7 +382,7 @@
       gap:8px;
       border:1px solid rgba(148,163,184,.35);
       border-radius:10px;
-      padding:7px 8px;
+      padding:7px 10px;
       background:rgba(255,255,255,.68);
     }
     .check-item.done{ opacity:.78; background:rgba(238,240,243,.85); }
@@ -401,6 +393,7 @@
       width:22px;height:22px;border:1px solid #c8cad0;border-radius:50%;
       background:#fff;color:#6b7280;font-size:13px;line-height:1;padding:0;cursor:pointer;flex:0 0 auto;
     }
+
     .check-add{
       display:flex;
       gap:10px;
@@ -434,6 +427,7 @@
       font-weight:500;
       color:#6b7280;
       margin:0;
+      display:none;
     }
 
     .dup-row{
@@ -453,7 +447,6 @@
       font-weight:500;
     }
 
-    /* ✅ 하단 아카이브(보관) 구역: 헤더 없음, 그냥 슬롯만 */
     .archive{
       position:fixed;
       left:50%;
@@ -497,1312 +490,1448 @@
       .archive-slot{ flex-wrap:wrap; overflow-x:hidden; }
       :root{ --archive-h: 118px; }
     }
+
+    /* ===== Cloud bar (상단 우측) ===== */
+    #cloudBar{
+      position:fixed; top:10px; right:10px; z-index:9999;
+      display:flex; gap:8px; align-items:center;
+      background:rgba(255,255,255,.86); backdrop-filter: blur(10px);
+      border:1px solid rgba(217,217,222,.9);
+      padding:8px 10px; border-radius:12px;
+    }
+    #cloudStatus{ font-size:12px; font-weight:500; color:#374151; }
+    #cloudBtn{
+      height:30px; padding:0 10px; border-radius:10px;
+      border:1px solid #c8cad0; background:#fff;
+      font-size:12px; font-weight:500; cursor:pointer;
+    }
+
+    /* login modal */
+    #loginModal{
+      position:fixed; inset:0; display:none; z-index:10000;
+      background:rgba(255,255,255,.01);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
   </style>
 </head>
 
 <body>
-<div class="app">
-  <div class="panel">
-    <div class="add-row">
-      <input id="taskInput" type="text" placeholder="과제 이모티콘을 입력해줘" />
-      <input id="noteInput" type="text" placeholder="발동 요인(Trigger)을 입력해줘" />
-      <button id="addTaskBtn">+ 과제 추가</button>
+  <div class="app">
+    <div class="panel">
+      <div class="add-row">
+        <input id="taskInput" type="text" placeholder="과제 이모티콘을 입력해줘" />
+        <input id="noteInput" type="text" placeholder="발동 요인(Trigger)을 입력해줘" />
+        <button id="addTaskBtn">+ 과제 추가</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="week" id="week"></div>
+      <div class="toolbar">
+        <button id="newWeek">새로운 주차</button>
+      </div>
     </div>
   </div>
 
-  <div class="panel">
-    <div class="week" id="week"></div>
-    <div class="toolbar">
-      <button id="newWeek">새로운 주차</button>
-    </div>
-  </div>
-</div>
-
-<!-- ✅ 아카이브 (헤더 없음) -->
-<div class="archive" id="archiveWrap" data-area="ARCHIVE">
-  <div class="archive-inner">
-    <div class="archive-slot" id="archiveSlot"></div>
-  </div>
-</div>
-
-<div class="modal-backdrop" id="modalBackdrop"></div>
-
-<div class="note-pop" id="notePop">
-  <div class="note-top">
-    <div class="ttl" id="notePopTitle">메모</div>
-    <div class="note-actions">
-      <button class="note-btn" id="editBtn">수정</button>
-      <button class="note-btn" id="dupBtn">복제</button>
-      <button class="note-btn note-danger" id="delBtn">삭제</button>
-      <button class="note-btn" id="noteCloseBtn">닫기</button>
+  <!-- ✅ 하단 아카이브 -->
+  <div class="archive" id="archiveWrap" data-area="ARCHIVE">
+    <div class="archive-inner">
+      <div class="archive-slot" id="archiveSlot"></div>
     </div>
   </div>
 
-  <div class="note-body" id="notePopBody"></div>
+  <!-- 팝오버/블러 -->
+  <div class="modal-backdrop" id="modalBackdrop"></div>
 
-  <div class="edit-wrap" id="editWrap">
-    <input id="editTitle" type="text" placeholder="제목" />
-    <textarea id="editNote" placeholder="설명"></textarea>
-    <div class="edit-actions">
-      <button class="note-btn" id="editCancel">취소</button>
-      <button class="note-btn" id="editSave">저장</button>
+  <div class="note-pop" id="notePop">
+    <div class="note-top">
+      <div class="ttl" id="notePopTitle">메모</div>
+      <div class="note-actions">
+        <button class="note-btn" id="editBtn">수정</button>
+        <button class="note-btn" id="dupBtn">복제</button>
+        <button class="note-btn note-danger" id="delBtn">삭제</button>
+        <button class="note-btn" id="noteCloseBtn">닫기</button>
+      </div>
+    </div>
+
+    <div class="note-body" id="notePopBody"></div>
+
+    <div class="edit-wrap" id="editWrap">
+      <input id="editTitle" type="text" placeholder="제목" />
+      <textarea id="editNote" placeholder="설명"></textarea>
+      <div class="edit-actions">
+        <button class="note-btn" id="editCancel">취소</button>
+        <button class="note-btn" id="editSave">저장</button>
+      </div>
+    </div>
+
+    <div class="dup-row" id="dupRow" style="display:none;">
+      <select id="dupDay">
+        <option value="Sun">Sun</option><option value="Mon">Mon</option><option value="Tue">Tue</option>
+        <option value="Wed">Wed</option><option value="Thu">Thu</option><option value="Fri">Fri</option>
+        <option value="Sat">Sat</option>
+      </select>
+      <button class="note-btn" id="dupDo">생성</button>
+    </div>
+
+    <div class="check-wrap">
+      <div id="checklistList" class="check-list"></div>
+      <div class="check-add">
+        <input id="checkInput" type="text" placeholder="수행 요소(Action)을 입력해줘" />
+        <button id="checkAddBtn" type="button">추가</button>
+      </div>
+      <div id="checkLimitHint" class="check-limit"></div>
     </div>
   </div>
 
-  <div class="dup-row" id="dupRow" style="display:none;">
-    <select id="dupDay">
-      <option value="Sun">Sun</option><option value="Mon">Mon</option><option value="Tue">Tue</option>
-      <option value="Wed">Wed</option><option value="Thu">Thu</option><option value="Fri">Fri</option>
-      <option value="Sat">Sat</option>
-    </select>
-    <button class="note-btn" id="dupDo">생성</button>
+  <!-- Cloud bar -->
+  <div id="cloudBar">
+    <span id="cloudStatus">Cloud: 연결 안 됨</span>
+    <button id="cloudBtn">로그인</button>
   </div>
 
-  <div class="check-wrap">
-    <div id="checklistList" class="check-list"></div>
-    <div class="check-add">
-      <input id="checkInput" type="text" placeholder="수행 요소(Action)을 입력해줘" />
-      <button id="checkAddBtn" type="button">추가</button>
+  <!-- Login modal -->
+  <div id="loginModal">
+    <div style="
+      width:min(360px, calc(100vw - 24px));
+      margin: calc(18vh) auto 0;
+      background:#fff; border:1px solid rgba(217,217,222,.9);
+      border-radius:14px; padding:12px;
+      box-shadow: 0 14px 34px rgba(16,24,40,.18);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans KR',sans-serif;
+    ">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <div style="font-size:14px; font-weight:600; color:#111827;">이메일로 로그인</div>
+        <button id="loginClose" style="
+          height:30px; padding:0 10px; border-radius:10px;
+          border:1px solid #c8cad0; background:#fff;
+          font-size:12px; font-weight:500; cursor:pointer;
+        ">닫기</button>
+      </div>
+
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <input id="loginEmail" type="email" placeholder="이메일 입력"
+          style="flex:1; height:36px; border:1px solid #cbd5e1; border-radius:10px; padding:0 10px; font-size:13px; font-weight:500;">
+        <button id="loginSend" style="
+          height:36px; padding:0 10px; border-radius:10px;
+          border:1px solid #c8cad0; background:#fff;
+          font-size:12px; font-weight:500; cursor:pointer;
+          white-space:nowrap;
+        ">링크 보내기</button>
+      </div>
+
+      <div id="loginHint" style="margin-top:8px; font-size:12px; color:#6b7280; line-height:1.4;">
+        메일로 온 링크를 같은 기기에서 열면 자동 로그인돼.
+      </div>
     </div>
-    <div id="checkLimitHint" class="check-limit" style="display:none;"></div>
   </div>
-</div>
 
-<script>
-(() => {
-  const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const STORAGE_KEY = "weekly-board-state-with-archive-v1";
-  const HOLD_TO_ARM_MS = 420;
-  const CLICK_DELAY = 220;
-  const MAX_CHECKLIST = 5;
+  <!-- Supabase SDK (UMD) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  const pastelPalette = [
-    { key:"p1",  bg:"#FDECEF", border:"#E7BBC6" },
-    { key:"p2",  bg:"#FFF1E8", border:"#E8C3AE" },
-    { key:"p3",  bg:"#FFF6E5", border:"#E9D1A2" },
-    { key:"p4",  bg:"#FFFCE8", border:"#E7E1A8" },
-    { key:"p5",  bg:"#EAF8F1", border:"#B8DFC8" },
-    { key:"p6",  bg:"#EDF7EE", border:"#BED8C0" },
-    { key:"p7",  bg:"#EAF3FF", border:"#B8CCEA" },
-    { key:"p8",  bg:"#EEF0FF", border:"#C1C7EC" },
-    { key:"p9",  bg:"#F1EDFF", border:"#C7BCEB" },
-    { key:"p10", bg:"#FCEFF6", border:"#E5C0D6" }
-  ];
-  const colorMap = Object.fromEntries(pastelPalette.map(c => [c.key, c]));
+  <script>
+  (() => {
+    // =========================
+    // App Core
+    // =========================
+    const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const STORAGE_KEY = "weekly-board-local-v2";
+    const HOLD_TO_ARM_MS = 420;
+    const CLICK_DELAY = 220;
+    const MAX_CHECKLIST = 5;
 
-  function emptyBoard(){ return Object.fromEntries(days.map(d => [d, []])); }
+    const pastelPalette = [
+      { key:"p1",  bg:"#FDECEF", border:"#E7BBC6" },
+      { key:"p2",  bg:"#FFF1E8", border:"#E8C3AE" },
+      { key:"p3",  bg:"#FFF6E5", border:"#E9D1A2" },
+      { key:"p4",  bg:"#FFFCE8", border:"#E7E1A8" },
+      { key:"p5",  bg:"#EAF8F1", border:"#B8DFC8" },
+      { key:"p6",  bg:"#EDF7EE", border:"#BED8C0" },
+      { key:"p7",  bg:"#EAF3FF", border:"#B8CCEA" },
+      { key:"p8",  bg:"#EEF0FF", border:"#C1C7EC" },
+      { key:"p9",  bg:"#F1EDFF", border:"#C7BCEB" },
+      { key:"p10", bg:"#FCEFF6", border:"#E5C0D6" }
+    ];
+    const colorMap = Object.fromEntries(pastelPalette.map(c => [c.key, c]));
 
-  let selectedDay = "Mon";
-  let boardUid = 1;
-  let lastColorKey = null;
-  let board = emptyBoard();
-  let archive = []; // ✅ 보관 구역 데이터
+    function emptyBoard(){ return Object.fromEntries(days.map(d => [d, []])); }
 
-  let suppressClicksUntil = 0;
-  let clickTimer = null;
+    let selectedDay = "Mon";
+    let boardUid = 1;
+    let lastColorKey = null;
+    let board = emptyBoard();
+    let archive = [];
 
-  // 이동 모드
-  let armed = { area:null, uid:null }; // area: 요일(Sun..Sat) 또는 "ARCHIVE"
+    let suppressClicksUntil = 0;
+    let clickTimer = null;
 
-  // 팝오버
-  let popState = { area:null, uid:null };
-  let popCloseTimer = null;
-  let backdropCloseTimer = null;
+    let armed = { area:null, uid:null };
 
-  // 드래그
-  const drag = {
-    active:false,
-    pointerId:null,
-    el:null,
-    uid:null,
-    srcArea:null,   // "Sun..Sat" or "ARCHIVE"
-    ghost:null,
-    placeholder:null,
-    moveHandler:null,
-    upHandler:null,
-    cancelHandler:null,
-  };
+    const popState = { area:null, uid:null };
+    let popCloseTimer = null;
+    let backdropCloseTimer = null;
 
-  const weekEl = document.getElementById("week");
-  const archiveSlot = document.getElementById("archiveSlot");
-
-  const taskInput = document.getElementById("taskInput");
-  const noteInput = document.getElementById("noteInput");
-  const addTaskBtn = document.getElementById("addTaskBtn");
-  const newWeekBtn = document.getElementById("newWeek");
-
-  const modalBackdrop = document.getElementById("modalBackdrop");
-  const notePop = document.getElementById("notePop");
-  const notePopTitle = document.getElementById("notePopTitle");
-  const notePopBody = document.getElementById("notePopBody");
-  const noteCloseBtn = document.getElementById("noteCloseBtn");
-
-  const checklistList = document.getElementById("checklistList");
-  const checkInput = document.getElementById("checkInput");
-  const checkAddBtn = document.getElementById("checkAddBtn");
-  const checkLimitHint = document.getElementById("checkLimitHint");
-
-  const editBtn = document.getElementById("editBtn");
-  const editWrap = document.getElementById("editWrap");
-  const editTitle = document.getElementById("editTitle");
-  const editNote = document.getElementById("editNote");
-  const editCancel = document.getElementById("editCancel");
-  const editSave = document.getElementById("editSave");
-
-  const dupBtn = document.getElementById("dupBtn");
-  const dupRow = document.getElementById("dupRow");
-  const dupDay = document.getElementById("dupDay");
-  const dupDo = document.getElementById("dupDo");
-
-  const delBtn = document.getElementById("delBtn");
-
-  const sanitizeLabel = s => (s || "").replace(/\s+/g, " ").trim();
-  const normalizeNote = s => (s || "").replace(/\r\n/g, "\n").trim();
-  const escapeHtml = s => String(s)
-    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;").replaceAll("'","&#39;");
-
-  function normalizeChecklist(list){
-    if (!Array.isArray(list)) return [];
-    return list.map(x => ({
-      id: String(x?.id ?? ("c" + Math.random().toString(36).slice(2))),
-      text: sanitizeLabel(String(x?.text ?? "")),
-      done: Boolean(x?.done)
-    })).filter(x => x.text);
-  }
-
-  function pillStyle(key){
-    const c = colorMap[key] || pastelPalette[0];
-    return `background:${c.bg}; border-color:${c.border};`;
-  }
-
-  function randomColorKey(){
-    const keys = pastelPalette.map(c => c.key);
-    const pool = (lastColorKey && keys.length > 1) ? keys.filter(k => k !== lastColorKey) : keys;
-    const picked = pool[Math.floor(Math.random() * pool.length)];
-    lastColorKey = picked;
-    return picked;
-  }
-
-  function safeGet(key){ try{ return localStorage.getItem(key); }catch{ return null; } }
-  function safeSet(key, value){ try{ localStorage.setItem(key, value); }catch{} }
-
- function saveState(){
-  const payload = { version: 1, selectedDay, boardUid, lastColorKey, board, archive };
-  safeSet(STORAGE_KEY, JSON.stringify(payload));
-
-  // ✅ 이 한 줄 추가
-  window.BoardBridge?._emitDirty();
-}
-
-  // === Cloud bridge: 앱 상태를 외부에서 읽고/쓰게 해주는 창구 ===
-window.BoardBridge = {
-  getState() {
-    return { selectedDay, boardUid, lastColorKey, board, archive };
-  },
-  setState(s) {
-    if (!s || typeof s !== "object") return;
-    if (typeof s.selectedDay === "string") selectedDay = s.selectedDay;
-    if (Number.isFinite(s.boardUid)) boardUid = s.boardUid;
-    if (typeof s.lastColorKey === "string" || s.lastColorKey === null) lastColorKey = s.lastColorKey;
-    if (s.board && typeof s.board === "object") board = s.board;
-    if (Array.isArray(s.archive)) archive = s.archive;
-
-    renderAll();
-    saveState(); // 로컬 보험
-  },
-  // 로컬 변경이 발생할 때 클라우드에 “업로드 예약”할 수 있게 콜백 등록
-  onDirty(cb) {
-    window.BoardBridge._dirtyCbs ??= [];
-    window.BoardBridge._dirtyCbs.push(cb);
-  },
-  _emitDirty() {
-    (window.BoardBridge._dirtyCbs || []).forEach(fn => {
-      try { fn(); } catch {}
-    });
-  }
-};
-
-  function normalizeItem(item){
-    return {
-      uid: String(item?.uid ?? ("u" + Math.random().toString(36).slice(2))),
-      label: sanitizeLabel(String(item?.label ?? "")),
-      note: normalizeNote(String(item?.note ?? "")),
-      colorKey: colorMap[item?.colorKey] ? item.colorKey : pastelPalette[0].key,
-      done: Boolean(item?.done),
-      checklist: normalizeChecklist(item?.checklist)
+    const drag = {
+      active:false,
+      pointerId:null,
+      el:null,
+      uid:null,
+      srcArea:null,
+      ghost:null,
+      placeholder:null,
+      moveHandler:null,
+      upHandler:null,
+      cancelHandler:null,
     };
-  }
 
-  function loadState(){
-    const raw = safeGet(STORAGE_KEY);
-    if (!raw) return;
-    try{
-      const parsed = JSON.parse(raw);
-      const loadedSelected = String(parsed.selectedDay || "Mon");
-      selectedDay = days.includes(loadedSelected) ? loadedSelected : "Mon";
-      boardUid = Number.isFinite(parsed.boardUid) ? Math.max(1, Math.floor(parsed.boardUid)) : 1;
-      lastColorKey = colorMap[parsed.lastColorKey] ? parsed.lastColorKey : null;
+    const weekEl = document.getElementById("week");
+    const archiveSlot = document.getElementById("archiveSlot");
 
-      const b = parsed.board;
-      board = emptyBoard();
-      for (const d of days){
-        const arr = Array.isArray(b?.[d]) ? b[d] : [];
-        board[d] = arr.map(normalizeItem).filter(x => x.label);
-      }
+    const taskInput = document.getElementById("taskInput");
+    const noteInput = document.getElementById("noteInput");
+    const addTaskBtn = document.getElementById("addTaskBtn");
+    const newWeekBtn = document.getElementById("newWeek");
 
-      const a = Array.isArray(parsed.archive) ? parsed.archive : [];
-      archive = a.map(normalizeItem).filter(x => x.label);
-    }catch{}
-  }
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const notePop = document.getElementById("notePop");
+    const notePopTitle = document.getElementById("notePopTitle");
+    const notePopBody = document.getElementById("notePopBody");
+    const noteCloseBtn = document.getElementById("noteCloseBtn");
 
-  function nowSuppressed(){ return Date.now() < suppressClicksUntil; }
+    const checklistList = document.getElementById("checklistList");
+    const checkInput = document.getElementById("checkInput");
+    const checkAddBtn = document.getElementById("checkAddBtn");
+    const checkLimitHint = document.getElementById("checkLimitHint");
 
-  function findItemInArea(area, uid){
-    if (area === "ARCHIVE"){
-      return archive.find(x => x.uid === uid) || null;
+    const editBtn = document.getElementById("editBtn");
+    const editWrap = document.getElementById("editWrap");
+    const editTitle = document.getElementById("editTitle");
+    const editNote = document.getElementById("editNote");
+    const editCancel = document.getElementById("editCancel");
+    const editSave = document.getElementById("editSave");
+
+    const dupBtn = document.getElementById("dupBtn");
+    const dupRow = document.getElementById("dupRow");
+    const dupDay = document.getElementById("dupDay");
+    const dupDo = document.getElementById("dupDo");
+
+    const delBtn = document.getElementById("delBtn");
+
+    // Dirty callbacks (for cloud sync)
+    const dirtyCbs = [];
+    function onDirty(cb){ dirtyCbs.push(cb); }
+    function emitDirty(){
+      dirtyCbs.forEach(fn => { try{ fn(); }catch{} });
     }
-    return (board[area] || []).find(x => x.uid === uid) || null;
-  }
 
-  function hasIncompleteChecklist(item){
-    const ck = Array.isArray(item.checklist) ? item.checklist : [];
-    return ck.some(c => !c.done);
-  }
+    function nowSuppressed(){ return Date.now() < suppressClicksUntil; }
 
-  function toggleDone(area, uid){
-    const item = findItemInArea(area, uid);
-    if (!item) return false;
+    const sanitizeLabel = s => (s || "").replace(/\s+/g, " ").trim();
+    const normalizeNote = s => (s || "").replace(/\r\n/g, "\n").trim();
+    const escapeHtml = s => String(s)
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#39;");
 
-    if (!item.done){
-      if (hasIncompleteChecklist(item)){
-        alert("아직 체크리스트 남아있어. 다 체크하고 완료해줘.");
-        return false;
+    function normalizeChecklist(list){
+      if (!Array.isArray(list)) return [];
+      return list.map(x => ({
+        id: String(x?.id ?? ("c" + Math.random().toString(36).slice(2))),
+        text: sanitizeLabel(String(x?.text ?? "")),
+        done: Boolean(x?.done)
+      })).filter(x => x.text);
+    }
+
+    function pillStyle(key){
+      const c = colorMap[key] || pastelPalette[0];
+      return `background:${c.bg}; border-color:${c.border};`;
+    }
+
+    function randomColorKey(){
+      const keys = pastelPalette.map(c => c.key);
+      const pool = (lastColorKey && keys.length > 1) ? keys.filter(k => k !== lastColorKey) : keys;
+      const picked = pool[Math.floor(Math.random() * pool.length)];
+      lastColorKey = picked;
+      return picked;
+    }
+
+    function safeGet(key){ try{ return localStorage.getItem(key); }catch{ return null; } }
+    function safeSet(key, value){ try{ localStorage.setItem(key, value); }catch{} }
+
+    function saveState(){
+      const payload = { version: 2, selectedDay, boardUid, lastColorKey, board, archive };
+      safeSet(STORAGE_KEY, JSON.stringify(payload));
+      emitDirty(); // ✅ cloud push 예약 트리거
+    }
+
+    function normalizeItem(item){
+      return {
+        uid: String(item?.uid ?? ("u" + Math.random().toString(36).slice(2))),
+        label: sanitizeLabel(String(item?.label ?? "")),
+        note: normalizeNote(String(item?.note ?? "")),
+        colorKey: colorMap[item?.colorKey] ? item.colorKey : pastelPalette[0].key,
+        done: Boolean(item?.done),
+        checklist: normalizeChecklist(item?.checklist)
+      };
+    }
+
+    function loadState(){
+      const raw = safeGet(STORAGE_KEY);
+      if (!raw) return;
+      try{
+        const parsed = JSON.parse(raw);
+        const loadedSelected = String(parsed.selectedDay || "Mon");
+        selectedDay = days.includes(loadedSelected) ? loadedSelected : "Mon";
+        boardUid = Number.isFinite(parsed.boardUid) ? Math.max(1, Math.floor(parsed.boardUid)) : 1;
+        lastColorKey = colorMap[parsed.lastColorKey] ? parsed.lastColorKey : null;
+
+        const b = parsed.board;
+        board = emptyBoard();
+        for (const d of days){
+          const arr = Array.isArray(b?.[d]) ? b[d] : [];
+          board[d] = arr.map(normalizeItem).filter(x => x.label);
+        }
+
+        const a = Array.isArray(parsed.archive) ? parsed.archive : [];
+        archive = a.map(normalizeItem).filter(x => x.label);
+      }catch{}
+    }
+
+    function findItemInArea(area, uid){
+      if (area === "ARCHIVE"){
+        return archive.find(x => x.uid === uid) || null;
       }
-      item.done = true;
+      return (board[area] || []).find(x => x.uid === uid) || null;
+    }
+
+    function hasIncompleteChecklist(item){
+      const ck = Array.isArray(item.checklist) ? item.checklist : [];
+      return ck.some(c => !c.done);
+    }
+
+    function toggleDone(area, uid){
+      const item = findItemInArea(area, uid);
+      if (!item) return false;
+
+      if (!item.done){
+        if (hasIncompleteChecklist(item)){
+          alert("아직 체크리스트 남아있어. 다 체크하고 완료해줘.");
+          return false;
+        }
+        item.done = true;
+        saveState();
+        return true;
+      }
+      item.done = false;
       saveState();
       return true;
     }
-    item.done = false;
-    saveState();
-    return true;
-  }
 
-  /* 이동 모드 */
-  function armChip(area, uid){
-    armed = { area, uid };
-    document.body.classList.add("reorder-mode");
-    renderAll();
-  }
-  function disarm(){
-    armed = { area:null, uid:null };
-    document.body.classList.remove("reorder-mode");
-    renderAll();
-  }
-  function isArmed(area, uid){
-    return armed.area === area && armed.uid === uid;
-  }
-
-  /* 팝오버 (기존 로직 유지) */
-  function showBackdrop(){
-    clearTimeout(backdropCloseTimer);
-    modalBackdrop.style.display = "block";
-    requestAnimationFrame(() => modalBackdrop.classList.add("show"));
-  }
-  function hideBackdrop(){
-    modalBackdrop.classList.remove("show");
-    clearTimeout(backdropCloseTimer);
-    backdropCloseTimer = setTimeout(() => { modalBackdrop.style.display = "none"; }, 150);
-  }
-
-  function applyPopColorByKey(colorKey){
-    const c = colorMap[colorKey] || pastelPalette[0];
-    notePop.style.background = c.bg;
-    notePop.style.borderColor = c.border;
-  }
-  function resetPopColor(){
-    notePop.style.background = "#fff";
-    notePop.style.borderColor = "#d7dce6";
-  }
-
-  function refreshChecklistControls(item){
-    const ck = Array.isArray(item.checklist) ? item.checklist : [];
-    const remain = MAX_CHECKLIST - ck.length;
-    if (remain <= 0){
-      checkAddBtn.disabled = true;
-      checkInput.disabled = true;
-      checkLimitHint.style.display = "block";
-      checkLimitHint.textContent = "체크리스트는 최대 5개까지만 가능해.";
-    }else{
-      checkAddBtn.disabled = false;
-      checkInput.disabled = false;
-      checkLimitHint.style.display = "none";
-      checkLimitHint.textContent = "";
+    function armChip(area, uid){
+      armed = { area, uid };
+      document.body.classList.add("reorder-mode");
+      renderAll();
     }
-  }
-
-  function renderChecklist(item){
-    checklistList.innerHTML = "";
-    const list = Array.isArray(item.checklist) ? item.checklist : [];
-    const visible = list.slice(0, MAX_CHECKLIST);
-    checklistList.style.display = (visible.length === 0) ? "none" : "flex";
-
-    visible.forEach((ck, idx) => {
-      const row = document.createElement("div");
-      row.className = "check-item" + (ck.done ? " done" : "");
-      row.innerHTML = `
-        <input type="checkbox" class="check-toggle" ${ck.done ? "checked" : ""}>
-        <span class="check-text">${escapeHtml(ck.text)}</span>
-        <button type="button" class="check-del">×</button>
-      `;
-
-      row.querySelector(".check-toggle").addEventListener("change", (e) => {
-        ck.done = e.target.checked;
-        if (!ck.done && item.done) item.done = false;
-        saveState();
-        renderChecklist(item);
-        renderAll();
-      });
-
-      row.querySelector(".check-del").addEventListener("click", (e) => {
-        e.preventDefault(); e.stopPropagation();
-        list.splice(idx, 1);
-        if (item.done && hasIncompleteChecklist(item)) item.done = false;
-        saveState();
-        renderChecklist(item);
-        renderAll();
-      });
-
-      checklistList.appendChild(row);
-    });
-
-    refreshChecklistControls(item);
-  }
-
-  function setViewMode(title, note){
-    notePopTitle.textContent = title || "메모";
-    const n = (note || "").trim();
-    if (n){
-      notePopBody.innerHTML = escapeHtml(n).replaceAll("\n","<br>");
-    }else{
-      notePopBody.innerHTML = `<span class="note-empty">설명이 없어</span>`;
+    function disarm(){
+      armed = { area:null, uid:null };
+      document.body.classList.remove("reorder-mode");
+      renderAll();
     }
-  }
-
-  function setMode(view){
-    if (view === "edit"){
-      notePopBody.style.display = "none";
-      editWrap.style.display = "flex";
-      dupRow.style.display = "none";
-    }else if (view === "dup"){
-      notePopBody.style.display = "";
-      editWrap.style.display = "none";
-      dupRow.style.display = "flex";
-    }else{
-      notePopBody.style.display = "";
-      editWrap.style.display = "none";
-      dupRow.style.display = "none";
+    function isArmed(area, uid){
+      return armed.area === area && armed.uid === uid;
     }
-  }
 
-  function positionPopNearAnchor(anchorEl){
-    const pad = 8;
-    const margin = 12;
+    function showBackdrop(){
+      clearTimeout(backdropCloseTimer);
+      modalBackdrop.style.display = "block";
+      requestAnimationFrame(() => modalBackdrop.classList.add("show"));
+    }
+    function hideBackdrop(){
+      modalBackdrop.classList.remove("show");
+      clearTimeout(backdropCloseTimer);
+      backdropCloseTimer = setTimeout(() => { modalBackdrop.style.display = "none"; }, 150);
+    }
 
-    notePop.style.left = "-9999px";
-    notePop.style.top = "-9999px";
-    notePop.style.display = "flex";
+    function applyPopColorByKey(colorKey){
+      const c = colorMap[colorKey] || pastelPalette[0];
+      notePop.style.background = c.bg;
+      notePop.style.borderColor = c.border;
+    }
+    function resetPopColor(){
+      notePop.style.background = "#fff";
+      notePop.style.borderColor = "#d7dce6";
+    }
 
-    const a = anchorEl.getBoundingClientRect();
-    const p = notePop.getBoundingClientRect();
-
-    let left = a.left + (a.width - p.width) / 2;
-    left = Math.max(margin, Math.min(left, window.innerWidth - p.width - margin));
-
-    let top = a.top - p.height - pad;
-    if (top < margin){
-      top = a.bottom + pad;
-      if (top + p.height > window.innerHeight - margin){
-        top = Math.max(margin, window.innerHeight - p.height - margin);
+    function refreshChecklistControls(item){
+      const ck = Array.isArray(item.checklist) ? item.checklist : [];
+      const remain = MAX_CHECKLIST - ck.length;
+      if (remain <= 0){
+        checkAddBtn.disabled = true;
+        checkInput.disabled = true;
+        checkLimitHint.style.display = "block";
+        checkLimitHint.textContent = "체크리스트는 최대 5개까지만 가능해.";
+      }else{
+        checkAddBtn.disabled = false;
+        checkInput.disabled = false;
+        checkLimitHint.style.display = "none";
+        checkLimitHint.textContent = "";
       }
     }
 
-    notePop.style.left = `${left}px`;
-    notePop.style.top = `${top}px`;
-  }
-
-  function closeNotePop(){
-    if (notePop.style.display !== "flex") return;
-
-    notePop.classList.remove("show");
-    hideBackdrop();
-
-    clearTimeout(popCloseTimer);
-    popCloseTimer = setTimeout(() => {
-      notePop.style.display = "none";
-      popState = { area:null, uid:null };
-      notePopTitle.textContent = "메모";
-      notePopBody.innerHTML = "";
+    function renderChecklist(item){
       checklistList.innerHTML = "";
-      checklistList.style.display = "none";
-      checkInput.value = "";
-      resetPopColor();
+      const list = Array.isArray(item.checklist) ? item.checklist : [];
+      const visible = list.slice(0, MAX_CHECKLIST);
+      checklistList.style.display = (visible.length === 0) ? "none" : "flex";
 
-      checkLimitHint.style.display = "none";
-      checkLimitHint.textContent = "";
-      checkAddBtn.disabled = false;
-      checkInput.disabled = false;
+      visible.forEach((ck, idx) => {
+        const row = document.createElement("div");
+        row.className = "check-item" + (ck.done ? " done" : "");
+        row.innerHTML = `
+          <input type="checkbox" class="check-toggle" ${ck.done ? "checked" : ""}>
+          <span class="check-text">${escapeHtml(ck.text)}</span>
+          <button type="button" class="check-del">×</button>
+        `;
 
-      editTitle.value = "";
-      editNote.value = "";
+        row.querySelector(".check-toggle").addEventListener("change", (e) => {
+          ck.done = e.target.checked;
+          if (!ck.done && item.done) item.done = false;
+          saveState();
+          renderChecklist(item);
+          renderAll();
+        });
+
+        row.querySelector(".check-del").addEventListener("click", (e) => {
+          e.preventDefault(); e.stopPropagation();
+          list.splice(idx, 1);
+          if (item.done && hasIncompleteChecklist(item)) item.done = false;
+          saveState();
+          renderChecklist(item);
+          renderAll();
+        });
+
+        checklistList.appendChild(row);
+      });
+
+      refreshChecklistControls(item);
+    }
+
+    function setViewMode(title, note){
+      notePopTitle.textContent = title || "메모";
+      const n = (note || "").trim();
+      if (n){
+        notePopBody.innerHTML = escapeHtml(n).replaceAll("\n","<br>");
+      }else{
+        notePopBody.innerHTML = `<span class="note-empty">설명이 없어</span>`;
+      }
+    }
+
+    function setMode(view){
+      if (view === "edit"){
+        notePopBody.style.display = "none";
+        editWrap.style.display = "flex";
+        dupRow.style.display = "none";
+      }else if (view === "dup"){
+        notePopBody.style.display = "";
+        editWrap.style.display = "none";
+        dupRow.style.display = "flex";
+      }else{
+        notePopBody.style.display = "";
+        editWrap.style.display = "none";
+        dupRow.style.display = "none";
+      }
+    }
+
+    function positionPopNearAnchor(anchorEl){
+      const pad = 8;
+      const margin = 12;
+
+      notePop.style.left = "-9999px";
+      notePop.style.top = "-9999px";
+      notePop.style.display = "flex";
+
+      const a = anchorEl.getBoundingClientRect();
+      const p = notePop.getBoundingClientRect();
+
+      let left = a.left + (a.width - p.width) / 2;
+      left = Math.max(margin, Math.min(left, window.innerWidth - p.width - margin));
+
+      let top = a.top - p.height - pad;
+      if (top < margin){
+        top = a.bottom + pad;
+        if (top + p.height > window.innerHeight - margin){
+          top = Math.max(margin, window.innerHeight - p.height - margin);
+        }
+      }
+
+      notePop.style.left = `${left}px`;
+      notePop.style.top = `${top}px`;
+    }
+
+    function closeNotePop(){
+      if (notePop.style.display !== "flex") return;
+
+      notePop.classList.remove("show");
+      hideBackdrop();
+
+      clearTimeout(popCloseTimer);
+      popCloseTimer = setTimeout(() => {
+        notePop.style.display = "none";
+        popState.area = null;
+        popState.uid = null;
+        notePopTitle.textContent = "메모";
+        notePopBody.innerHTML = "";
+        checklistList.innerHTML = "";
+        checklistList.style.display = "none";
+        checkInput.value = "";
+        resetPopColor();
+
+        checkLimitHint.style.display = "none";
+        checkLimitHint.textContent = "";
+        checkAddBtn.disabled = false;
+        checkInput.disabled = false;
+
+        editTitle.value = "";
+        editNote.value = "";
+        setMode("view");
+      }, 150);
+    }
+
+    function openNotePop(anchorEl, area, uid){
+      const item = findItemInArea(area, uid);
+      if (!item) return;
+
+      popState.area = area;
+      popState.uid = uid;
+
+      applyPopColorByKey(item.colorKey);
+      setViewMode(item.label, item.note || "");
+      renderChecklist(item);
+
+      editTitle.value = item.label;
+      editNote.value = item.note || "";
+      dupDay.value = (days.includes(selectedDay) ? selectedDay : "Mon");
+
       setMode("view");
-    }, 150);
-  }
-
-  function openNotePop(anchorEl, area, uid){
-    const item = findItemInArea(area, uid);
-    if (!item) return;
-
-    popState = { area, uid };
-    applyPopColorByKey(item.colorKey);
-    setViewMode(item.label, item.note || "");
-    renderChecklist(item);
-
-    editTitle.value = item.label;
-    editNote.value = item.note || "";
-    dupDay.value = (days.includes(selectedDay) ? selectedDay : "Mon");
-
-    setMode("view");
-    showBackdrop();
-    notePop.classList.remove("show");
-    positionPopNearAnchor(anchorEl);
-    requestAnimationFrame(() => notePop.classList.add("show"));
-  }
-
-  function addChecklistItem(){
-    if (!popState.area || !popState.uid) return;
-    const item = findItemInArea(popState.area, popState.uid);
-    if (!item) return;
-
-    const list = Array.isArray(item.checklist) ? item.checklist : (item.checklist = []);
-    if (list.length >= MAX_CHECKLIST){
-      alert("체크리스트는 최대 5개까지만 가능해.");
-      return;
+      showBackdrop();
+      notePop.classList.remove("show");
+      positionPopNearAnchor(anchorEl);
+      requestAnimationFrame(() => notePop.classList.add("show"));
     }
 
-    const text = sanitizeLabel(checkInput.value);
-    if (!text) return;
-
-    list.push({
-      id: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      text,
-      done:false
-    });
-
-    if (item.done) item.done = false;
-
-    checkInput.value = "";
-    saveState();
-    renderChecklist(item);
-    renderAll();
-  }
-
-  function removeItem(area, uid){
-    if (area === "ARCHIVE"){
-      const idx = archive.findIndex(x => x.uid === uid);
-      if (idx > -1) archive.splice(idx, 1);
-    }else{
-      const arr = board[area] || [];
-      const idx = arr.findIndex(x => x.uid === uid);
-      if (idx > -1) arr.splice(idx, 1);
-    }
-    saveState();
-  }
-
-  function duplicateItem(toDay){
-    const { area, uid } = popState;
-    if (!area || !uid) return;
-    const item = findItemInArea(area, uid);
-    if (!item) return;
-
-    const srcCk = Array.isArray(item.checklist) ? item.checklist : [];
-    const newChecklist = srcCk.map(c => ({
-      id: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      text: c.text,
-      done: false
-    }));
-
-    board[toDay].push({
-      uid: "u" + (boardUid++),
-      label: item.label,
-      note: item.note,
-      colorKey: randomColorKey(),
-      done:false,
-      checklist: newChecklist
-    });
-
-    selectedDay = toDay;
-    saveState();
-    renderAll();
-  }
-
-  function saveEdits(){
-    const { area, uid } = popState;
-    if (!area || !uid) return;
-    const item = findItemInArea(area, uid);
-    if (!item) return;
-
-    const newTitle = sanitizeLabel(editTitle.value);
-    const newNote = normalizeNote(editNote.value);
-
-    if (!newTitle){
-      alert("제목은 비워둘 수 없어.");
-      return;
-    }
-
-    item.label = newTitle;
-    item.note = newNote;
-
-    saveState();
-    setViewMode(item.label, item.note || "");
-    renderAll();
-    setMode("view");
-  }
-
-  /* ===== 드래그 대상 판정: 요일들 + 아카이브 둘 다 포함 ===== */
-  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-
-  function nearestTargetEl(x, y){
-    const els = [
-      ...Array.from(document.querySelectorAll(".day")),
-      document.getElementById("archiveWrap")
-    ].filter(Boolean);
-
-    let best = null, bestDist = Infinity;
-
-    for (const el of els){
-      const r = el.getBoundingClientRect();
-      const cx = clamp(x, r.left, r.right);
-      const cy = clamp(y, r.top, r.bottom);
-      const dx = x - cx, dy = y - cy;
-      const d2 = dx*dx + dy*dy;
-      if (d2 < bestDist){
-        bestDist = d2;
-        best = el;
-      }
-    }
-    if (!best) return null;
-    if (bestDist > 190*190) return null;
-    return best;
-  }
-
-  function getSlotFromTargetEl(targetEl){
-    if (!targetEl) return null;
-    if (targetEl.classList.contains("day")) return targetEl.querySelector(".slot");
-    if (targetEl.id === "archiveWrap") return document.getElementById("archiveSlot");
-    return null;
-  }
-
-  function getAreaFromTargetEl(targetEl){
-    if (!targetEl) return null;
-    if (targetEl.classList.contains("day")) return targetEl.dataset.day;
-    if (targetEl.id === "archiveWrap") return "ARCHIVE";
-    return null;
-  }
-
-  function chipsInSlot(slot){
-    return Array.from(slot.querySelectorAll(".chip"))
-      .filter(ch => ch.dataset.dragging !== "1");
-  }
-
-  function computeInsertIndex(slot, x, y){
-    const chips = chipsInSlot(slot);
-    if (!chips.length) return 0;
-
-    let idx = chips.length;
-
-    for (let i=0;i<chips.length;i++){
-      const r = chips[i].getBoundingClientRect();
-      const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
-      const mid = r.left + r.width/2;
-
-      // 아카이브(가로 스크롤)는 x 중심 기준이 더 자연스럽고,
-      // 요일 슬롯은 기존대로 y도 같이 고려
-      if (sameRow && x < mid){ idx=i; break; }
-      if (!slot.classList.contains("archive-slot") && y < r.top + r.height/2){ idx=i; break; }
-    }
-    return idx;
-  }
-
-  function placePlaceholder(slot, idx){
-    if (!drag.placeholder) return;
-    const chips = chipsInSlot(slot);
-    const before = chips[idx] || null;
-    slot.insertBefore(drag.placeholder, before);
-  }
-
-  function placeholderIndex(slot){
-    if (!drag.placeholder) return 0;
-    let idx = 0;
-    for (const child of slot.children){
-      if (child === drag.placeholder) break;
-      if (child.classList && child.classList.contains("chip") && child.dataset.dragging !== "1"){
-        idx++;
-      }
-    }
-    return idx;
-  }
-
-  function beginDrag(el, srcArea, uid, e){
-    closeNotePop();
-
-    drag.active = true;
-    drag.pointerId = e.pointerId;
-    drag.el = el;
-    drag.uid = uid;
-    drag.srcArea = srcArea;
-
-    document.body.classList.add("dragging");
-
-    const ph = document.createElement("div");
-    ph.className = "drag-placeholder";
-    drag.placeholder = ph;
-    el.parentNode.insertBefore(ph, el);
-
-    const ghost = el.cloneNode(true);
-    ghost.classList.add("drag-ghost");
-    document.body.appendChild(ghost);
-    drag.ghost = ghost;
-
-    ghost.style.left = e.clientX + "px";
-    ghost.style.top = e.clientY + "px";
-
-    el.dataset.dragging = "1";
-    el.style.position = "fixed";
-    el.style.left = "-9999px";
-    el.style.top = "-9999px";
-    el.style.pointerEvents = "none";
-
-    try{ el.setPointerCapture(e.pointerId); }catch{}
-
-    drag.moveHandler = (ev) => {
-      if (!drag.active) return;
-      if (ev.pointerId !== drag.pointerId) return;
-      ev.preventDefault();
-
-      drag.ghost.style.left = ev.clientX + "px";
-      drag.ghost.style.top = ev.clientY + "px";
-
-      const targetEl = nearestTargetEl(ev.clientX, ev.clientY);
-      if (!targetEl) return;
-
-      const slot = getSlotFromTargetEl(targetEl);
-      if (!slot) return;
-
-      const idx = computeInsertIndex(slot, ev.clientX, ev.clientY);
-      placePlaceholder(slot, idx);
-    };
-
-    drag.upHandler = (ev) => {
-      if (!drag.active) return;
-      if (ev.pointerId !== drag.pointerId) return;
-      ev.preventDefault();
-      finishDrag(ev.clientX, ev.clientY);
-    };
-
-    drag.cancelHandler = (ev) => {
-      if (!drag.active) return;
-      if (ev.pointerId !== drag.pointerId) return;
-      ev.preventDefault();
-      cancelDrag();
-    };
-
-    el.addEventListener("pointermove", drag.moveHandler, { passive:false });
-    el.addEventListener("pointerup", drag.upHandler, { passive:false });
-    el.addEventListener("pointercancel", drag.cancelHandler, { passive:false });
-
-    suppressClicksUntil = Date.now() + 500;
-  }
-
-  function cleanupDrag(){
-    document.body.classList.remove("dragging");
-
-    if (drag.el){
-      try{ drag.el.releasePointerCapture(drag.pointerId); }catch{}
-      drag.el.removeEventListener("pointermove", drag.moveHandler);
-      drag.el.removeEventListener("pointerup", drag.upHandler);
-      drag.el.removeEventListener("pointercancel", drag.cancelHandler);
-
-      delete drag.el.dataset.dragging;
-      drag.el.style.position = "";
-      drag.el.style.left = "";
-      drag.el.style.top = "";
-      drag.el.style.pointerEvents = "";
-    }
-
-    if (drag.ghost && drag.ghost.parentNode) drag.ghost.parentNode.removeChild(drag.ghost);
-    if (drag.placeholder && drag.placeholder.parentNode) drag.placeholder.parentNode.removeChild(drag.placeholder);
-
-    drag.active = false;
-    drag.pointerId = null;
-    drag.el = null;
-    drag.uid = null;
-    drag.srcArea = null;
-    drag.ghost = null;
-    drag.placeholder = null;
-    drag.moveHandler = null;
-    drag.upHandler = null;
-    drag.cancelHandler = null;
-  }
-
-  function takeFromArea(area, uid){
-    if (area === "ARCHIVE"){
-      const idx = archive.findIndex(x => x.uid === uid);
-      if (idx === -1) return null;
-      return archive.splice(idx, 1)[0];
-    }
-    const arr = board[area] || [];
-    const idx = arr.findIndex(x => x.uid === uid);
-    if (idx === -1) return null;
-    return arr.splice(idx, 1)[0];
-  }
-
-  function insertIntoArea(area, item, index){
-    if (!item) return;
-    if (area === "ARCHIVE"){
-      const idx = Math.min(archive.length, Math.max(0, index));
-      archive.splice(idx, 0, item);
-      return;
-    }
-    const arr = board[area] || (board[area] = []);
-    const idx = Math.min(arr.length, Math.max(0, index));
-    arr.splice(idx, 0, item);
-  }
-
-  function finishDrag(x, y){
-    const targetEl = nearestTargetEl(x, y);
-    if (targetEl){
-      const slot = getSlotFromTargetEl(targetEl);
-      if (slot){
-        const idx = computeInsertIndex(slot, x, y);
-        placePlaceholder(slot, idx);
-      }
-    }
-
-    const ph = drag.placeholder;
-    if (!ph || !ph.parentElement){
-      cleanupDrag();
-      renderAll();
-      disarm();
-      return;
-    }
-
-    const toSlot = ph.parentElement;
-    const toTargetEl = (toSlot.id === "archiveSlot")
-      ? document.getElementById("archiveWrap")
-      : toSlot.closest(".day");
-
-    const toArea = getAreaFromTargetEl(toTargetEl) || drag.srcArea;
-    const fromArea = drag.srcArea;
-    const uid = drag.uid;
-
-    const item = takeFromArea(fromArea, uid);
-    if (!item){
-      cleanupDrag();
-      renderAll();
-      disarm();
-      return;
-    }
-
-    const idx = placeholderIndex(toSlot);
-    insertIntoArea(toArea, item, idx);
-
-    // 선택 요일은 “요일로 옮겼을 때만” 업데이트
-    if (days.includes(toArea)) selectedDay = toArea;
-
-    saveState();
-    cleanupDrag();
-    renderAll();
-    disarm();
-  }
-
-  function cancelDrag(){
-    cleanupDrag();
-    renderAll();
-    disarm();
-  }
-
-  /* ===== 렌더 ===== */
-  function makeChip(item, area){
-    const ckLen = Array.isArray(item.checklist) ? item.checklist.length : 0;
-
-    const chip = document.createElement("div");
-    chip.className = "chip" + (item.done ? " done" : "") + (ckLen ? " has-ck" : "");
-    if (isArmed(area, item.uid)) chip.classList.add("armed");
-
-    chip.dataset.uid = item.uid;
-    chip.dataset.area = area;
-
-    if (!item.done) chip.style.cssText = pillStyle(item.colorKey);
-
-    chip.innerHTML = `
-      <span class="chip-text" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
-      <span class="ck-count">${ckLen}</span>
-    `;
-
-    // pointerdown: (1) armed면 즉시 드래그 (2) 아니면 길게 눌러 armed
-    let holdTimer = null;
-    let holding = false;
-
-    const clearHold = () => {
-      if (holdTimer){ clearTimeout(holdTimer); holdTimer = null; }
-      holding = false;
-    };
-
-    chip.addEventListener("pointerdown", (e) => {
-      if (drag.active) return;
-      if (nowSuppressed()) return;
-      if (e.button !== undefined && e.button !== 0) return;
-
-      if (isArmed(area, item.uid)){
-        beginDrag(chip, area, item.uid, e);
+    function addChecklistItem(){
+      if (!popState.area || !popState.uid) return;
+      const item = findItemInArea(popState.area, popState.uid);
+      if (!item) return;
+
+      const list = Array.isArray(item.checklist) ? item.checklist : (item.checklist = []);
+      if (list.length >= MAX_CHECKLIST){
+        alert("체크리스트는 최대 5개까지만 가능해.");
         return;
       }
 
-      holding = true;
-      holdTimer = setTimeout(() => {
-        if (!holding) return;
-        clearHold();
-        armChip(area, item.uid);
-        suppressClicksUntil = Date.now() + 250;
-      }, HOLD_TO_ARM_MS);
+      const text = sanitizeLabel(checkInput.value);
+      if (!text) return;
 
-      const up = () => { clearHold(); cleanup(); };
-      const cancel = () => { clearHold(); cleanup(); };
-
-      const cleanup = () => {
-        window.removeEventListener("pointerup", up);
-        window.removeEventListener("pointercancel", cancel);
-      };
-
-      window.addEventListener("pointerup", up, { passive:true });
-      window.addEventListener("pointercancel", cancel, { passive:true });
-    });
-
-    // click: 팝오버 (armed면 무시)
-    chip.addEventListener("click", (e) => {
-      if (drag.active) return;
-      if (nowSuppressed()) return;
-      e.stopPropagation();
-
-      if (isArmed(area, item.uid)) return;
-
-      if (days.includes(area)){
-        selectedDay = area;
-        saveState();
-      }
-
-      clearTimeout(clickTimer);
-      clickTimer = setTimeout(() => {
-        openNotePop(chip, area, item.uid);
-      }, CLICK_DELAY);
-    });
-
-    // dblclick: 완료 토글 (armed면 무시)
-    chip.addEventListener("dblclick", (e) => {
-      if (drag.active) return;
-      if (nowSuppressed()) return;
-      if (isArmed(area, item.uid)) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-      clearTimeout(clickTimer);
-
-      if (toggleDone(area, item.uid)){
-        renderAll();
-      }
-    });
-
-    return chip;
-  }
-
-  function renderWeek(){
-    weekEl.innerHTML = "";
-
-    for (const day of days){
-      const col = document.createElement("div");
-      col.className = "day" + (day === selectedDay ? " selected" : "");
-      col.dataset.day = day;
-
-      const head = document.createElement("div");
-      head.className = "day-head";
-      head.textContent = day;
-      head.onclick = () => {
-        if (nowSuppressed() || drag.active) return;
-        selectedDay = day;
-        saveState();
-        renderAll();
-      };
-
-      const slot = document.createElement("div");
-      slot.className = "slot";
-      slot.onclick = () => {
-        if (nowSuppressed() || drag.active) return;
-        selectedDay = day;
-        saveState();
-        renderAll();
-      };
-
-      (board[day] || []).forEach((item) => {
-        slot.appendChild(makeChip(item, day));
+      list.push({
+        id: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        text,
+        done:false
       });
 
-      col.appendChild(head);
-      col.appendChild(slot);
-      weekEl.appendChild(col);
+      if (item.done) item.done = false;
+
+      checkInput.value = "";
+      saveState();
+      renderChecklist(item);
+      renderAll();
     }
-  }
 
-  function renderArchive(){
-    archiveSlot.innerHTML = "";
-    archive.forEach(item => {
-      archiveSlot.appendChild(makeChip(item, "ARCHIVE"));
-    });
-  }
+    function removeItem(area, uid){
+      if (area === "ARCHIVE"){
+        const idx = archive.findIndex(x => x.uid === uid);
+        if (idx > -1) archive.splice(idx, 1);
+      }else{
+        const arr = board[area] || [];
+        const idx = arr.findIndex(x => x.uid === uid);
+        if (idx > -1) arr.splice(idx, 1);
+      }
+      saveState();
+    }
 
-  function renderAll(){
-    renderWeek();
-    renderArchive();
-  }
+    function duplicateItem(toDay){
+      const { area, uid } = popState;
+      if (!area || !uid) return;
+      const item = findItemInArea(area, uid);
+      if (!item) return;
 
-  /* 입력 */
-  function addTask(){
-    const label = sanitizeLabel(taskInput.value);
-    if (!label) return;
+      const srcCk = Array.isArray(item.checklist) ? item.checklist : [];
+      const newChecklist = srcCk.map(c => ({
+        id: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        text: c.text,
+        done: false
+      }));
 
-    const note = normalizeNote(noteInput.value);
-    const colorKey = randomColorKey();
+      board[toDay].push({
+        uid: "u" + (boardUid++),
+        label: item.label,
+        note: item.note,
+        colorKey: randomColorKey(),
+        done:false,
+        checklist: newChecklist
+      });
 
-    board[selectedDay].push({
-      uid: "u" + (boardUid++),
-      label,
-      note,
-      colorKey,
-      done:false,
-      checklist:[]
-    });
+      selectedDay = toDay;
+      saveState();
+      renderAll();
+    }
 
-    taskInput.value = "";
-    noteInput.value = "";
-    saveState();
-    renderAll();
-  }
+    function saveEdits(){
+      const { area, uid } = popState;
+      if (!area || !uid) return;
+      const item = findItemInArea(area, uid);
+      if (!item) return;
 
-  /* 이벤트: 이동 모드 해제 */
-  document.addEventListener("pointerdown", (e) => {
-    if (!armed.uid) return;
-    const onArmed = e.target.closest?.(".chip.armed");
-    if (onArmed) return;
-    disarm();
-  }, { passive:true });
+      const newTitle = sanitizeLabel(editTitle.value);
+      const newNote = normalizeNote(editNote.value);
 
-  /* 팝오버 닫기 */
-  document.addEventListener("click", (e) => {
-    const inPop = notePop.contains(e.target);
-    const onChip = e.target.closest && e.target.closest(".chip");
-    if (!inPop && notePop.style.display === "flex" && !onChip){
+      if (!newTitle){
+        alert("제목은 비워둘 수 없어.");
+        return;
+      }
+
+      item.label = newTitle;
+      item.note = newNote;
+
+      saveState();
+      setViewMode(item.label, item.note || "");
+      renderAll();
+      setMode("view");
+    }
+
+    // ===== Drag helpers (요일/아카이브 사이 이동) =====
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+    function nearestTargetEl(x, y){
+      const els = [
+        ...Array.from(document.querySelectorAll(".day")),
+        document.getElementById("archiveWrap")
+      ].filter(Boolean);
+
+      let best = null, bestDist = Infinity;
+
+      for (const el of els){
+        const r = el.getBoundingClientRect();
+        const cx = clamp(x, r.left, r.right);
+        const cy = clamp(y, r.top, r.bottom);
+        const dx = x - cx, dy = y - cy;
+        const d2 = dx*dx + dy*dy;
+        if (d2 < bestDist){
+          bestDist = d2;
+          best = el;
+        }
+      }
+      if (!best) return null;
+      if (bestDist > 190*190) return null;
+      return best;
+    }
+
+    function getSlotFromTargetEl(targetEl){
+      if (!targetEl) return null;
+      if (targetEl.classList.contains("day")) return targetEl.querySelector(".slot");
+      if (targetEl.id === "archiveWrap") return document.getElementById("archiveSlot");
+      return null;
+    }
+
+    function getAreaFromTargetEl(targetEl){
+      if (!targetEl) return null;
+      if (targetEl.classList.contains("day")) return targetEl.dataset.day;
+      if (targetEl.id === "archiveWrap") return "ARCHIVE";
+      return null;
+    }
+
+    function chipsInSlot(slot){
+      return Array.from(slot.querySelectorAll(".chip"))
+        .filter(ch => ch.dataset.dragging !== "1");
+    }
+
+    function computeInsertIndex(slot, x, y){
+      const chips = chipsInSlot(slot);
+      if (!chips.length) return 0;
+
+      let idx = chips.length;
+
+      for (let i=0;i<chips.length;i++){
+        const r = chips[i].getBoundingClientRect();
+        const sameRow = Math.abs((r.top + r.height/2) - y) < 26;
+        const mid = r.left + r.width/2;
+
+        if (sameRow && x < mid){ idx=i; break; }
+        if (!slot.classList.contains("archive-slot") && y < r.top + r.height/2){ idx=i; break; }
+      }
+      return idx;
+    }
+
+    function placePlaceholder(slot, idx){
+      if (!drag.placeholder) return;
+      const chips = chipsInSlot(slot);
+      const before = chips[idx] || null;
+      slot.insertBefore(drag.placeholder, before);
+    }
+
+    function placeholderIndex(slot){
+      if (!drag.placeholder) return 0;
+      let idx = 0;
+      for (const child of slot.children){
+        if (child === drag.placeholder) break;
+        if (child.classList && child.classList.contains("chip") && child.dataset.dragging !== "1"){
+          idx++;
+        }
+      }
+      return idx;
+    }
+
+    function beginDrag(el, srcArea, uid, e){
       closeNotePop();
+
+      drag.active = true;
+      drag.pointerId = e.pointerId;
+      drag.el = el;
+      drag.uid = uid;
+      drag.srcArea = srcArea;
+
+      document.body.classList.add("dragging");
+
+      const ph = document.createElement("div");
+      ph.className = "drag-placeholder";
+      drag.placeholder = ph;
+      el.parentNode.insertBefore(ph, el);
+
+      const ghost = el.cloneNode(true);
+      ghost.classList.add("drag-ghost");
+      document.body.appendChild(ghost);
+      drag.ghost = ghost;
+
+      ghost.style.left = e.clientX + "px";
+      ghost.style.top = e.clientY + "px";
+
+      el.dataset.dragging = "1";
+      el.style.position = "fixed";
+      el.style.left = "-9999px";
+      el.style.top = "-9999px";
+      el.style.pointerEvents = "none";
+
+      try{ el.setPointerCapture(e.pointerId); }catch{}
+
+      drag.moveHandler = (ev) => {
+        if (!drag.active) return;
+        if (ev.pointerId !== drag.pointerId) return;
+        ev.preventDefault();
+
+        drag.ghost.style.left = ev.clientX + "px";
+        drag.ghost.style.top = ev.clientY + "px";
+
+        const targetEl = nearestTargetEl(ev.clientX, ev.clientY);
+        if (!targetEl) return;
+
+        const slot = getSlotFromTargetEl(targetEl);
+        if (!slot) return;
+
+        const idx = computeInsertIndex(slot, ev.clientX, ev.clientY);
+        placePlaceholder(slot, idx);
+      };
+
+      drag.upHandler = (ev) => {
+        if (!drag.active) return;
+        if (ev.pointerId !== drag.pointerId) return;
+        ev.preventDefault();
+        finishDrag(ev.clientX, ev.clientY);
+      };
+
+      drag.cancelHandler = (ev) => {
+        if (!drag.active) return;
+        if (ev.pointerId !== drag.pointerId) return;
+        ev.preventDefault();
+        cancelDrag();
+      };
+
+      el.addEventListener("pointermove", drag.moveHandler, { passive:false });
+      el.addEventListener("pointerup", drag.upHandler, { passive:false });
+      el.addEventListener("pointercancel", drag.cancelHandler, { passive:false });
+
+      suppressClicksUntil = Date.now() + 500;
     }
-  });
 
-  /* 모바일 키보드 리사이즈: 가로폭 변화 때만 닫기 */
-  let lastW = window.innerWidth;
-  window.addEventListener("resize", () => {
-    const w = window.innerWidth;
-    const widthChanged = Math.abs(w - lastW) > 30;
-    lastW = w;
-    if (widthChanged && notePop.style.display === "flex") closeNotePop();
-  });
+    function cleanupDrag(){
+      document.body.classList.remove("dragging");
 
-  /* 팝오버 버튼들 */
-  modalBackdrop.onclick = closeNotePop;
-  noteCloseBtn.onclick = closeNotePop;
+      if (drag.el){
+        try{ drag.el.releasePointerCapture(drag.pointerId); }catch{}
+        drag.el.removeEventListener("pointermove", drag.moveHandler);
+        drag.el.removeEventListener("pointerup", drag.upHandler);
+        drag.el.removeEventListener("pointercancel", drag.cancelHandler);
 
-  checkAddBtn.onclick = addChecklistItem;
-  checkInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter"){
-      e.preventDefault();
-      addChecklistItem();
+        delete drag.el.dataset.dragging;
+        drag.el.style.position = "";
+        drag.el.style.left = "";
+        drag.el.style.top = "";
+        drag.el.style.pointerEvents = "";
+      }
+
+      if (drag.ghost && drag.ghost.parentNode) drag.ghost.parentNode.removeChild(drag.ghost);
+      if (drag.placeholder && drag.placeholder.parentNode) drag.placeholder.parentNode.removeChild(drag.placeholder);
+
+      drag.active = false;
+      drag.pointerId = null;
+      drag.el = null;
+      drag.uid = null;
+      drag.srcArea = null;
+      drag.ghost = null;
+      drag.placeholder = null;
+      drag.moveHandler = null;
+      drag.upHandler = null;
+      drag.cancelHandler = null;
     }
-  });
 
-  editBtn.onclick = () => setMode("edit");
-  editCancel.onclick = () => {
-    const item = findItemInArea(popState.area, popState.uid);
-    if (item){
-      editTitle.value = item.label;
-      editNote.value = item.note || "";
+    function takeFromArea(area, uid){
+      if (area === "ARCHIVE"){
+        const idx = archive.findIndex(x => x.uid === uid);
+        if (idx === -1) return null;
+        return archive.splice(idx, 1)[0];
+      }
+      const arr = board[area] || [];
+      const idx = arr.findIndex(x => x.uid === uid);
+      if (idx === -1) return null;
+      return arr.splice(idx, 1)[0];
     }
-    setMode("view");
-  };
-  editSave.onclick = saveEdits;
 
-  dupBtn.onclick = () => {
-    dupDay.value = selectedDay;
-    setMode("dup");
-  };
-  dupDo.onclick = () => {
-    const d = dupDay.value;
-    if (!days.includes(d)) return;
-    duplicateItem(d);
-    setMode("view");
-  };
+    function insertIntoArea(area, item, index){
+      if (!item) return;
+      if (area === "ARCHIVE"){
+        const idx = Math.min(archive.length, Math.max(0, index));
+        archive.splice(idx, 0, item);
+        return;
+      }
+      const arr = board[area] || (board[area] = []);
+      const idx = Math.min(arr.length, Math.max(0, index));
+      arr.splice(idx, 0, item);
+    }
 
-  delBtn.onclick = () => {
-    const { area, uid } = popState;
-    if (!area || !uid) return;
-    if (!confirm("이 탭 지울까?")) return;
-    removeItem(area, uid);
-    closeNotePop();
-    renderAll();
-  };
+    function finishDrag(x, y){
+      const targetEl = nearestTargetEl(x, y);
+      if (targetEl){
+        const slot = getSlotFromTargetEl(targetEl);
+        if (slot){
+          const idx = computeInsertIndex(slot, x, y);
+          placePlaceholder(slot, idx);
+        }
+      }
 
-  /* 주차 초기화 */
-  newWeekBtn.onclick = () => {
-    if (!confirm("새로운 주차로 넘어갈까? 요일 배치만 비워져.")) return;
-    board = emptyBoard();
-    selectedDay = "Mon";
-    closeNotePop();
-    disarm();
-    saveState();
-    renderAll();
-    alert("새로운 주차로 초기화했어.");
-  };
+      const ph = drag.placeholder;
+      if (!ph || !ph.parentElement){
+        cleanupDrag();
+        renderAll();
+        disarm();
+        return;
+      }
 
-  /* 상단 입력 */
-  addTaskBtn.onclick = addTask;
-  taskInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
-  noteInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
+      const toSlot = ph.parentElement;
+      const toTargetEl = (toSlot.id === "archiveSlot")
+        ? document.getElementById("archiveWrap")
+        : toSlot.closest(".day");
 
-  loadState();
-  renderAll();
-})();
-</script>
+      const toArea = getAreaFromTargetEl(toTargetEl) || drag.srcArea;
+      const fromArea = drag.srcArea;
+      const uid = drag.uid;
 
-<script>
-  // SW 등록(있을 때만)
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", async () => {
-      try {
-        const reg = await navigator.serviceWorker.register("./sw.js?v=41");
-        reg.update();
-      } catch (err) {
-        console.log("SW register failed:", err);
+      const item = takeFromArea(fromArea, uid);
+      if (!item){
+        cleanupDrag();
+        renderAll();
+        disarm();
+        return;
+      }
+
+      const idx = placeholderIndex(toSlot);
+      insertIntoArea(toArea, item, idx);
+
+      if (days.includes(toArea)) selectedDay = toArea;
+
+      saveState();
+      cleanupDrag();
+      renderAll();
+      disarm();
+    }
+
+    function cancelDrag(){
+      cleanupDrag();
+      renderAll();
+      disarm();
+    }
+
+    // ===== Rendering =====
+    function makeChip(item, area){
+      const ckLen = Array.isArray(item.checklist) ? item.checklist.length : 0;
+
+      const chip = document.createElement("div");
+      chip.className = "chip" + (item.done ? " done" : "") + (ckLen ? " has-ck" : "");
+      if (isArmed(area, item.uid)) chip.classList.add("armed");
+
+      chip.dataset.uid = item.uid;
+      chip.dataset.area = area;
+
+      if (!item.done) chip.style.cssText = pillStyle(item.colorKey);
+
+      chip.innerHTML = `
+        <span class="chip-text" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
+        <span class="ck-count">${ckLen}</span>
+      `;
+
+      let holdTimer = null;
+      let holding = false;
+
+      const clearHold = () => {
+        if (holdTimer){ clearTimeout(holdTimer); holdTimer = null; }
+        holding = false;
+      };
+
+      chip.addEventListener("pointerdown", (e) => {
+        if (drag.active) return;
+        if (nowSuppressed()) return;
+        if (e.button !== undefined && e.button !== 0) return;
+
+        if (isArmed(area, item.uid)){
+          beginDrag(chip, area, item.uid, e);
+          return;
+        }
+
+        holding = true;
+        holdTimer = setTimeout(() => {
+          if (!holding) return;
+          clearHold();
+          armChip(area, item.uid);
+          suppressClicksUntil = Date.now() + 250;
+        }, HOLD_TO_ARM_MS);
+
+        const up = () => { clearHold(); cleanup(); };
+        const cancel = () => { clearHold(); cleanup(); };
+
+        const cleanup = () => {
+          window.removeEventListener("pointerup", up);
+          window.removeEventListener("pointercancel", cancel);
+        };
+
+        window.addEventListener("pointerup", up, { passive:true });
+        window.addEventListener("pointercancel", cancel, { passive:true });
+      });
+
+      chip.addEventListener("click", (e) => {
+        if (drag.active) return;
+        if (nowSuppressed()) return;
+        e.stopPropagation();
+
+        if (isArmed(area, item.uid)) return;
+
+        if (days.includes(area)){
+          selectedDay = area;
+          saveState();
+        }
+
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => {
+          openNotePop(chip, area, item.uid);
+        }, CLICK_DELAY);
+      });
+
+      chip.addEventListener("dblclick", (e) => {
+        if (drag.active) return;
+        if (nowSuppressed()) return;
+        if (isArmed(area, item.uid)) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        clearTimeout(clickTimer);
+
+        if (toggleDone(area, item.uid)){
+          renderAll();
+        }
+      });
+
+      return chip;
+    }
+
+    function renderWeek(){
+      weekEl.innerHTML = "";
+
+      for (const day of days){
+        const col = document.createElement("div");
+        col.className = "day" + (day === selectedDay ? " selected" : "");
+        col.dataset.day = day;
+
+        const head = document.createElement("div");
+        head.className = "day-head";
+        head.textContent = day;
+        head.onclick = () => {
+          if (nowSuppressed() || drag.active) return;
+          selectedDay = day;
+          saveState();
+          renderAll();
+        };
+
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        slot.onclick = () => {
+          if (nowSuppressed() || drag.active) return;
+          selectedDay = day;
+          saveState();
+          renderAll();
+        };
+
+        (board[day] || []).forEach((item) => {
+          slot.appendChild(makeChip(item, day));
+        });
+
+        col.appendChild(head);
+        col.appendChild(slot);
+        weekEl.appendChild(col);
+      }
+    }
+
+    function renderArchive(){
+      archiveSlot.innerHTML = "";
+      archive.forEach(item => {
+        archiveSlot.appendChild(makeChip(item, "ARCHIVE"));
+      });
+    }
+
+    function renderAll(){
+      renderWeek();
+      renderArchive();
+    }
+
+    function addTask(){
+      const label = sanitizeLabel(taskInput.value);
+      if (!label) return;
+
+      const note = normalizeNote(noteInput.value);
+      const colorKey = randomColorKey();
+
+      board[selectedDay].push({
+        uid: "u" + (boardUid++),
+        label,
+        note,
+        colorKey,
+        done:false,
+        checklist:[]
+      });
+
+      taskInput.value = "";
+      noteInput.value = "";
+      saveState();
+      renderAll();
+    }
+
+    // 이동모드 해제
+    document.addEventListener("pointerdown", (e) => {
+      if (!armed.uid) return;
+      const onArmed = e.target.closest?.(".chip.armed");
+      if (onArmed) return;
+      disarm();
+    }, { passive:true });
+
+    // 팝오버 닫기(바깥 클릭)
+    document.addEventListener("click", (e) => {
+      const inPop = notePop.contains(e.target);
+      const onChip = e.target.closest && e.target.closest(".chip");
+      if (!inPop && notePop.style.display === "flex" && !onChip){
+        closeNotePop();
       }
     });
-  }
-</script>
-  <!-- Supabase Login Bar (작게, 화면 위) -->
-<div id="cloudBar" style="
-  position:fixed; top:10px; right:10px; z-index:9999;
-  display:flex; gap:8px; align-items:center;
-  background:rgba(255,255,255,.86); backdrop-filter: blur(10px);
-  border:1px solid rgba(217,217,222,.9);
-  padding:8px 10px; border-radius:12px;
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans KR',sans-serif;
-">
-  <span id="cloudStatus" style="font-size:12px; font-weight:500; color:#374151;">Cloud: 연결 안 됨</span>
-  <button id="cloudBtn" style="
-    height:30px; padding:0 10px; border-radius:10px;
-    border:1px solid #c8cad0; background:#fff;
-    font-size:12px; font-weight:500; cursor:pointer;
-  ">로그인</button>
-</div>
 
-<!-- Login Popup -->
-<div id="loginModal" style="
-  position:fixed; inset:0; display:none; z-index:10000;
-  background:rgba(255,255,255,.01); backdrop-filter: blur(2px);
-">
-  <div style="
-    width:min(360px, calc(100vw - 24px));
-    margin: calc(18vh) auto 0;
-    background:#fff; border:1px solid rgba(217,217,222,.9);
-    border-radius:14px; padding:12px;
-    box-shadow: 0 14px 34px rgba(16,24,40,.18);
-  ">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-      <div style="font-size:14px; font-weight:600; color:#111827;">이메일로 로그인</div>
-      <button id="loginClose" style="
-        height:30px; padding:0 10px; border-radius:10px;
-        border:1px solid #c8cad0; background:#fff;
-        font-size:12px; font-weight:500; cursor:pointer;
-      ">닫기</button>
-    </div>
+    // 모바일 키보드 리사이즈 방지: 가로폭 변화일 때만 닫기
+    let lastW = window.innerWidth;
+    window.addEventListener("resize", () => {
+      const w = window.innerWidth;
+      const widthChanged = Math.abs(w - lastW) > 30;
+      lastW = w;
+      if (widthChanged && notePop.style.display === "flex") closeNotePop();
+    });
 
-    <div style="margin-top:10px; display:flex; gap:8px;">
-      <input id="loginEmail" type="email" placeholder="이메일 입력"
-        style="flex:1; height:36px; border:1px solid #cbd5e1; border-radius:10px; padding:0 10px; font-size:13px; font-weight:500;">
-      <button id="loginSend" style="
-        height:36px; padding:0 10px; border-radius:10px;
-        border:1px solid #c8cad0; background:#fff;
-        font-size:12px; font-weight:500; cursor:pointer;
-        white-space:nowrap;
-      ">링크 보내기</button>
-    </div>
+    modalBackdrop.onclick = closeNotePop;
+    noteCloseBtn.onclick = closeNotePop;
 
-    <div id="loginHint" style="margin-top:8px; font-size:12px; color:#6b7280; line-height:1.4;">
-      메일로 온 링크를 같은 기기에서 열면 자동 로그인돼.
-    </div>
-  </div>
-</div>
-  <script type="module">
-  // ✅ Supabase JS SDK (CDN: esm.sh가 브라우저에서 안정적인 편)
-  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    checkAddBtn.onclick = addChecklistItem;
+    checkInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter"){
+        e.preventDefault();
+        addChecklistItem();
+      }
+    });
 
-  // =========================
-  // 0) 여기에 네 키 넣기
-  // =========================
-  const SUPABASE_URL = "https://byugpzacqfnkespvorog.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_tbKWDC-cgI79usA_zrG9Mg_XBrl9LaS";
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // =========================
-  // 1) UI 엘리먼트
-  // =========================
-  const cloudStatus = document.getElementById("cloudStatus");
-  const cloudBtn = document.getElementById("cloudBtn");
-
-  const loginModal = document.getElementById("loginModal");
-  const loginClose = document.getElementById("loginClose");
-  const loginEmail = document.getElementById("loginEmail");
-  const loginSend = document.getElementById("loginSend");
-  const loginHint = document.getElementById("loginHint");
-
-  function setStatus(text){
-    cloudStatus.textContent = text;
-  }
-
-  function openLogin(){
-    loginModal.style.display = "block";
-    setTimeout(() => loginEmail?.focus(), 0);
-  }
-  function closeLogin(){
-    loginModal.style.display = "none";
-  }
-
-  loginClose.onclick = closeLogin;
-  loginModal.addEventListener("click", (e) => {
-    if (e.target === loginModal) closeLogin();
-  });
-
-  // =========================
-  // 2) 로컬 상태 <-> 클라우드 상태 변환
-  // =========================
-  function getAppState(){
-    // 네 앱의 전역 상태를 그대로 저장
-    return {
-      selectedDay,
-      boardUid,
-      lastColorKey,
-      board,
-      archive
+    editBtn.onclick = () => setMode("edit");
+    editCancel.onclick = () => {
+      const item = findItemInArea(popState.area, popState.uid);
+      if (item){
+        editTitle.value = item.label;
+        editNote.value = item.note || "";
+      }
+      setMode("view");
     };
-  }
+    editSave.onclick = saveEdits;
 
-  function setAppState(state){
-    // 들어온 상태로 앱 전역 변수를 갱신
-    // (없는 키는 무시)
-    if (!state || typeof state !== "object") return;
+    dupBtn.onclick = () => {
+      dupDay.value = selectedDay;
+      setMode("dup");
+    };
+    dupDo.onclick = () => {
+      const d = dupDay.value;
+      if (!days.includes(d)) return;
+      duplicateItem(d);
+      setMode("view");
+    };
 
-    if (typeof state.selectedDay === "string") selectedDay = state.selectedDay;
-    if (Number.isFinite(state.boardUid)) boardUid = state.boardUid;
-    if (typeof state.lastColorKey === "string" || state.lastColorKey === null) lastColorKey = state.lastColorKey;
+    delBtn.onclick = () => {
+      const { area, uid } = popState;
+      if (!area || !uid) return;
+      if (!confirm("이 탭 지울까?")) return;
+      removeItem(area, uid);
+      closeNotePop();
+      renderAll();
+    };
 
-    if (state.board && typeof state.board === "object") board = state.board;
-    if (Array.isArray(state.archive)) archive = state.archive;
+    newWeekBtn.onclick = () => {
+      if (!confirm("새로운 주차로 넘어갈까? 요일 배치만 비워져.")) return;
+      board = emptyBoard();
+      selectedDay = "Mon";
+      closeNotePop();
+      disarm();
+      saveState();
+      renderAll();
+      alert("새로운 주차로 초기화했어.");
+    };
 
-    // 화면 갱신
-    if (typeof renderAll === "function") renderAll();
+    addTaskBtn.onclick = addTask;
+    taskInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
+    noteInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
 
-    // 로컬에도 저장(오프라인 보험)
-    if (typeof saveState === "function") saveState();
-  }
+    // ===== Bridge (Cloud sync용) =====
+    window.BoardBridge = {
+      getState(){ return { selectedDay, boardUid, lastColorKey, board, archive }; },
+      setState(s){
+        if (!s || typeof s !== "object") return;
+        if (typeof s.selectedDay === "string") selectedDay = s.selectedDay;
+        if (Number.isFinite(s.boardUid)) boardUid = s.boardUid;
+        if (typeof s.lastColorKey === "string" || s.lastColorKey === null) lastColorKey = s.lastColorKey;
+        if (s.board && typeof s.board === "object") board = s.board;
+        if (Array.isArray(s.archive)) archive = s.archive;
 
-  // =========================
-  // 3) 동기화 엔진
-  // =========================
-  const clientIdKey = "weekly-board-client-id";
-  const clientId = (() => {
-    let v = localStorage.getItem(clientIdKey);
-    if (!v){
-      v = "c_" + Math.random().toString(36).slice(2) + "_" + Date.now().toString(36);
-      localStorage.setItem(clientIdKey, v);
-    }
-    return v;
+        renderAll();
+        // 로컬 저장은 즉시(보험)
+        const payload = { version: 2, selectedDay, boardUid, lastColorKey, board, archive };
+        safeSet(STORAGE_KEY, JSON.stringify(payload));
+      },
+      onDirty(cb){ onDirty(cb); }
+    };
+
+    loadState();
+    renderAll();
   })();
+  </script>
 
-  let uid = null;
-  let localRev = 0;
-  let pushing = false;
-  let pullLock = false;
-  let debounceTimer = null;
-  let channel = null;
+  <!-- =========================
+       Supabase Cloud Sync Layer
+       ========================= -->
+  <script>
+  (function(){
+    // ✅ 여기를 너 값으로 교체
+    const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
 
-  function debouncePush(ms=450){
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => pushCloud(), ms);
-  }
+    const cloudStatus = document.getElementById("cloudStatus");
+    const cloudBtn = document.getElementById("cloudBtn");
 
-  async function ensureRow(){
-    // 내 row를 가져오고, 없으면 생성
-    const { data, error } = await supabase
-      .from("boards")
-      .select("state, rev, updated_at, client_id")
-      .eq("user_id", uid)
-      .maybeSingle();
+    const loginModal = document.getElementById("loginModal");
+    const loginClose = document.getElementById("loginClose");
+    const loginEmail = document.getElementById("loginEmail");
+    const loginSend = document.getElementById("loginSend");
+    const loginHint = document.getElementById("loginHint");
 
-    if (error) throw error;
+    function setStatus(t){ cloudStatus.textContent = t; }
 
-    if (!data){
-      // 서버에 아직 없음 -> 로컬 상태를 서버에 최초 업로드
-      const initState = getAppState();
-      const { error: insErr } = await supabase
-        .from("boards")
-        .insert({
-          user_id: uid,
-          state: initState,
-          rev: 1,
-          client_id: clientId
-        });
-      if (insErr) throw insErr;
-      localRev = 1;
-      return { state: initState, rev: 1 };
+    function openLogin(){
+      loginModal.style.display = "block";
+      setTimeout(() => loginEmail && loginEmail.focus(), 0);
+    }
+    function closeLogin(){ loginModal.style.display = "none"; }
+
+    loginClose.onclick = closeLogin;
+    loginModal.addEventListener("click", (e) => {
+      if (e.target === loginModal) closeLogin();
+    });
+
+    if (!window.supabase || !window.supabase.createClient){
+      setStatus("Cloud: SDK 로드 실패");
+      return;
     }
 
-    localRev = Number(data.rev) || 0;
-    return { state: data.state, rev: localRev, client_id: data.client_id };
-  }
+    const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  async function pullCloud(){
-    if (!uid) return;
-    if (pullLock) return;
-    pullLock = true;
+    // clientId (기기 구분)
+    const clientIdKey = "weekly-board-client-id";
+    const clientId = (() => {
+      let v = localStorage.getItem(clientIdKey);
+      if (!v){
+        v = "c_" + Math.random().toString(36).slice(2) + "_" + Date.now().toString(36);
+        localStorage.setItem(clientIdKey, v);
+      }
+      return v;
+    })();
 
-    try{
-      setStatus("Cloud: 불러오는 중…");
+    let uid = null;
+    let localRev = 0;
+    let pushing = false;
+    let pullLock = false;
+    let debounceTimer = null;
+    let channel = null;
 
-      const { data, error } = await supabase
+    function debouncePush(ms=450){
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => pushCloud(), ms);
+    }
+
+    function getAppState(){ return window.BoardBridge.getState(); }
+    function setAppState(state){ window.BoardBridge.setState(state); }
+
+    async function ensureRow(){
+      const { data, error } = await supa
         .from("boards")
-        .select("state, rev, client_id, updated_at")
+        .select("state, rev, updated_at, client_id")
         .eq("user_id", uid)
         .maybeSingle();
 
       if (error) throw error;
-      if (!data) return;
+
+      if (!data){
+        const initState = getAppState();
+        const { error: insErr } = await supa
+          .from("boards")
+          .insert({
+            user_id: uid,
+            state: initState,
+            rev: 1,
+            client_id: clientId
+          });
+        if (insErr) throw insErr;
+        localRev = 1;
+        return { state: initState, rev: 1, client_id: clientId };
+      }
+
+      localRev = Number(data.rev) || 0;
+      return { state: data.state, rev: localRev, client_id: data.client_id };
+    }
+
+    async function pullCloud(){
+      if (!uid) return;
+      if (pullLock) return;
+      pullLock = true;
+
+      try{
+        const { data, error } = await supa
+          .from("boards")
+          .select("state, rev, client_id, updated_at")
+          .eq("user_id", uid)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!data) return;
+
+        const rev = Number(data.rev) || 0;
+        // 다른 기기에서 올라온 변경만 반영
+        if (rev > localRev && data.client_id !== clientId){
+          localRev = rev;
+          setAppState(data.state);
+        }
+
+        setStatus("Cloud: 동기화됨");
+      }catch(err){
+        console.log(err);
+        setStatus("Cloud: 불러오기 실패");
+      }finally{
+        pullLock = false;
+      }
+    }
+
+    async function pushCloud(){
+      if (!uid) return;
+      if (pushing) return;
+      pushing = true;
+
+      try{
+        const nextRev = localRev + 1;
+        const payload = {
+          state: getAppState(),
+          rev: nextRev,
+          client_id: clientId,
+          updated_at: new Date().toISOString()
+        };
+
+        const { error } = await supa
+          .from("boards")
+          .update(payload)
+          .eq("user_id", uid);
+
+        if (error) throw error;
+
+        localRev = nextRev;
+        setStatus("Cloud: 동기화됨");
+      }catch(err){
+        console.log(err);
+        setStatus("Cloud: 업로드 실패(오프라인?)");
+      }finally{
+        pushing = false;
+      }
+    }
+
+    function subscribeRealtime(){
+      try{
+        if (channel) supa.removeChannel(channel);
+
+        channel = supa
+          .channel("boards-sync-" + uid)
+          .on("postgres_changes",
+            { event:"*", schema:"public", table:"boards", filter:`user_id=eq.${uid}` },
+            (payload) => {
+              const row = payload.new;
+              if (!row) return;
+
+              if (row.client_id === clientId) return;
+
+              const rev = Number(row.rev) || 0;
+              if (rev > localRev){
+                localRev = rev;
+                setAppState(row.state);
+                setStatus("Cloud: 동기화됨");
+              }
+            }
+          )
+          .subscribe();
+      }catch(e){
+        console.log(e);
+      }
+    }
+
+    function setLoggedOutUI(){
+      cloudBtn.textContent = "로그인";
+      setStatus("Cloud: 연결 안 됨");
+    }
+    function setLoggedInUI(email){
+      cloudBtn.textContent = "로그아웃";
+      setStatus("Cloud: 동기화 중…");
+      cloudStatus.title = email || "";
+    }
+
+    async function sendMagicLink(){
+      const email = (loginEmail.value || "").trim();
+      if (!email){
+        loginHint.textContent = "이메일부터 입력해줘.";
+        return;
+      }
+      loginHint.textContent = "메일 보내는 중…";
+
+      try{
+        const redirectTo = window.location.origin + window.location.pathname;
+
+        const { error } = await supa.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: redirectTo }
+        });
+
+        if (error) throw error;
+
+        loginHint.textContent = "메일 보냈어. 같은 기기에서 링크 열면 자동 로그인돼.";
+      }catch(err){
+        console.log(err);
+        loginHint.textContent = "실패했어. Supabase Auth URL 설정을 확인해줘.";
+      }
+    }
+
+    loginSend.onclick = sendMagicLink;
+
+    cloudBtn.onclick = async () => {
+      const { data } = await supa.auth.getSession();
+      const session = data.session;
+
+      if (!session){
+        openLogin();
+        return;
+      }
+
+      await supa.auth.signOut();
+      uid = null;
+      localRev = 0;
+      if (channel) supa.removeChannel(channel);
+      channel = null;
+      setLoggedOutUI();
+    };
+
+    // 앱 변경 -> 클라우드 업로드 예약
+    window.BoardBridge.onDirty(() => {
+      if (uid) debouncePush(450);
+    });
+
+    supa.auth.onAuthStateChange(async (_event, session) => {
+      if (!session){
+        uid = null;
+        localRev = 0;
+        setLoggedOutUI();
+        return;
+      }
+
+      closeLogin();
+      uid = session.user.id;
+      setLoggedInUI(session.user.email);
+
+      try{
+        const row = await ensureRow();
+        // 서버가 가진 게 “한 번이라도” 있으면 그걸 기준으로 맞추기
+        setAppState(row.state);
+
+        subscribeRealtime();
+
+        // 보험용 폴링(Realtime이 가끔 막히면 대비)
+        setInterval(() => { if (uid) pullCloud(); }, 10000);
+
+        await pullCloud();
+      }catch(err){
+        console.log(err);
+        setStatus("Cloud: 초기화 실패");
+      }
+    });
+
+    // 초기 상태 표시
+    (async () => {
+      const { data } = await supa.auth.getSession();
+      if (!data.session){
+        setLoggedOutUI();
+      }else{
+        setLoggedInUI(data.session.user.email);
+      }
+    })();
+  })();
+  </script>
+
+  <!-- 서비스워커(있을 때만) -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", async () => {
+        try {
+          const reg = await navigator.serviceWorker.register("./sw.js?v=51");
+          reg.update();
+        } catch (err) {
+          console.log("SW register failed:", err);
+        }
+      });
+    }
+  </script>
 </body>
 </html>
-
-
-
